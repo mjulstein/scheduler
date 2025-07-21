@@ -1,9 +1,9 @@
 // App.tsx - Main application component
 import { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import type { DayData, DayItem } from './Types';
+import { DayData, DayItem } from './Types';
 import { getStateFromUrl, updateUrlWithState } from './urlState';
-import { formatISODate, getMondayOfWeek } from './dateUtils';
+import { formatISODate, getMondayOfWeek, isToday } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
 import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
@@ -184,7 +184,7 @@ export const App = () => {
             setShowWeekends={setShowWeekends}
             firstDayDate={weekDays.length > 0 ? weekDays[0].date : ''}
           />
-
+          
           {weekDays.map(day => (
             <DayCard
               key={day.date}
