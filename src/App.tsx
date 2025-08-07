@@ -19,27 +19,37 @@ export const App = () => {
 
   const [weekDays, setWeekDays] = useState<DayData[]>([]);
   const [newItems, setNewItems] = useState<{ [key: string]: string }>(urlState?.newItems || {});
-  const [weekOffset, setWeekOffset] = useState<number>(urlState?.weekOffset || 0);
   const [showWeekends, setShowWeekends] = useState<boolean>(urlState?.showWeekends || false);
   const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
 
-  // Date format state in search param
+  // Date format and week offset state in search params
   const [searchParams, setSearchParams] = useSearchParams();
   const initialDateFormat = searchParams.get('dateFormat') || 'yyyy-MM-dd';
   const [dateFormat, setDateFormatState] = useState<string>(initialDateFormat);
+
+  // Always read weekOffset from searchParams for rendering
+  const getWeekOffset = () => {
+    const param = searchParams.get('weekOffset');
+    return !isNaN(Number(param)) ? Number(param) : 0;
+  };
 
   // Helper to update dateFormat and search param together
   const setDateFormat = (value: string) => {
     setDateFormatState(value);
     setSearchParams(params => {
       params.set('dateFormat', value);
+      params.set('weekOffset', String(getWeekOffset()));
       return params;
     });
   };
 
-  // Helper to update state and URL for weekOffset
+  // Helper to update weekOffset and search param together
   const setWeekOffsetAndUrl = (value: number) => {
-    setWeekOffset(value);
+    setSearchParams(params => {
+      params.set('weekOffset', String(value));
+      params.set('dateFormat', dateFormat);
+      return params;
+    });
     updateUrlWithState({
       weekOffset: value,
       showWeekends,
@@ -52,15 +62,22 @@ export const App = () => {
   const setShowWeekendsAndUrl = (value: boolean) => {
     setShowWeekends(value);
     updateUrlWithState({
-      weekOffset,
+      weekOffset: getWeekOffset(),
       showWeekends: value,
       items: itemsRef.current,
       newItems
     });
   };
 
+  // Helper to get formatted day name for UI
+  const getFormattedDayName = (date: Date) => {
+    const luxonDate = DateTime.fromJSDate(date);
+    return luxonDate.toFormat(dateFormat);
+  };
+
   // Generate days based on weekOffset and showWeekends
   useEffect(() => {
+    const weekOffset = getWeekOffset();
     // Generate the week's days based on weekOffset
     const today = new Date();
     const todayISODate = formatISODate(today);
@@ -71,9 +88,8 @@ export const App = () => {
     for (let i = 0; i < 7; i++) {
       const date = new Date(monday);
       date.setDate(monday.getDate() + i);
-
       const isoDate = formatISODate(date);
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const dayName = getFormattedDayName(date);
       const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
 
       // Skip weekends if showWeekends is false
@@ -100,7 +116,7 @@ export const App = () => {
 
     // Reverse the order of days
     setWeekDays(days.reverse());
-  }, [weekOffset, showWeekends]);
+  }, [searchParams, showWeekends, dateFormat]);
 
   const handleAddItem = (dayDate: string) => {
     if (newItems[dayDate].trim() === '') return;
@@ -123,7 +139,7 @@ export const App = () => {
       [dayDate]: ''
     }));
     updateUrlWithState({
-      weekOffset,
+      weekOffset: getWeekOffset(),
       showWeekends,
       items: itemsRef.current,
       newItems: { ...newItems, [dayDate]: '' }
@@ -140,7 +156,7 @@ export const App = () => {
     setNewItems(prev => {
       const updated = { ...prev, [dayDate]: value };
       updateUrlWithState({
-        weekOffset,
+        weekOffset: getWeekOffset(),
         showWeekends,
         items: itemsRef.current,
         newItems: updated
@@ -150,6 +166,7 @@ export const App = () => {
   };
 
   const generateRichText = useCallback(() => {
+    const weekOffset = getWeekOffset();
     // Get all days for the current week, including weekends for rich text
     const today = new Date();
     const monday = getMondayOfWeek(today, weekOffset);
@@ -191,7 +208,7 @@ export const App = () => {
 
     // Reverse the order of days and join them
     return dayContents.reverse().join('');
-  }, [weekOffset, showWeekends, dateFormat]);
+  }, [searchParams, showWeekends, dateFormat]);
 
   return (
     <div className="app-container">
@@ -226,7 +243,7 @@ export const App = () => {
       <div className="content-container">
         <div className="days-list">
           <WeekNavigation
-            weekOffset={weekOffset}
+            weekOffset={getWeekOffset()}
             setWeekOffset={setWeekOffsetAndUrl}
             showWeekends={showWeekends}
             setShowWeekends={setShowWeekendsAndUrl}

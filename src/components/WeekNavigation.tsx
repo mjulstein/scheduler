@@ -14,6 +14,7 @@ interface WeekNavigationProps {
  * Component for navigating between weeks and toggling weekend visibility
  */
 export const WeekNavigation: FC<WeekNavigationProps> = ({
+  weekOffset,
   setWeekOffset,
   showWeekends,
   setShowWeekends,
@@ -21,12 +22,12 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
 }) => {
   // Navigate to previous week
   const goToPreviousWeek = () => {
-    setWeekOffset(prev => prev - 1);
+    setWeekOffset(weekOffset - 1);
   };
 
   // Navigate to next week
   const goToNextWeek = () => {
-    setWeekOffset(prev => prev + 1);
+    setWeekOffset(weekOffset + 1);
   };
 
   // Toggle weekend visibility
