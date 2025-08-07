@@ -4,9 +4,9 @@ import { getWeekNumber } from '../dateUtils';
 
 interface WeekNavigationProps {
   weekOffset: number;
-  setWeekOffset: (offset: number | ((prev: number) => number)) => void;
+  setWeekOffset:  (prev: number) =>  void;
   showWeekends: boolean;
-  setShowWeekends: (show: boolean | ((prev: boolean) => boolean)) => void;
+  setShowWeekends: (prev: boolean) => void;
   firstDayDate: string;
 }
 
@@ -32,7 +32,7 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
 
   // Toggle weekend visibility
   const toggleWeekends = () => {
-    setShowWeekends(prev => !prev);
+    setShowWeekends(!showWeekends);
   };
 
   return (
@@ -46,8 +46,8 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
       <button onClick={goToNextWeek} className="nav-button">
         Next Week &rarr;
       </button>
-      <button 
-        onClick={toggleWeekends} 
+      <button
+        onClick={toggleWeekends}
         className="toggle-button"
       >
         {showWeekends ? 'Hide Weekends' : 'Show Weekends'}
