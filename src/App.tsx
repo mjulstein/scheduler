@@ -7,6 +7,8 @@ import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
 import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
+import { useSearchParams } from 'react-router-dom';
+import { DateTime } from 'luxon';
 
 /**
  * Main application component
@@ -16,20 +18,46 @@ export const App = () => {
   const urlState = getStateFromUrl();
 
   const [weekDays, setWeekDays] = useState<DayData[]>([]);
-  const [newItems, setNewItems] = useState<{ [key: string]: string }>({});
+  const [newItems, setNewItems] = useState<{ [key: string]: string }>(urlState?.newItems || {});
   const [weekOffset, setWeekOffset] = useState<number>(urlState?.weekOffset || 0);
   const [showWeekends, setShowWeekends] = useState<boolean>(urlState?.showWeekends || false);
   const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
 
-  // Update URL with state whenever relevant state changes
-  useEffect(() => {
-    const state = {
-      weekOffset,
+  // Date format state in search param
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDateFormat = searchParams.get('dateFormat') || 'yyyy-MM-dd';
+  const [dateFormat, setDateFormatState] = useState<string>(initialDateFormat);
+
+  // Helper to update dateFormat and search param together
+  const setDateFormat = (value: string) => {
+    setDateFormatState(value);
+    setSearchParams(params => {
+      params.set('dateFormat', value);
+      return params;
+    });
+  };
+
+  // Helper to update state and URL for weekOffset
+  const setWeekOffsetAndUrl = (value: number) => {
+    setWeekOffset(value);
+    updateUrlWithState({
+      weekOffset: value,
       showWeekends,
-      items: itemsRef.current
-    };
-    updateUrlWithState(state);
-  }, [weekOffset, showWeekends]);
+      items: itemsRef.current,
+      newItems
+    });
+  };
+
+  // Helper to update state and URL for showWeekends
+  const setShowWeekendsAndUrl = (value: boolean) => {
+    setShowWeekends(value);
+    updateUrlWithState({
+      weekOffset,
+      showWeekends: value,
+      items: itemsRef.current,
+      newItems
+    });
+  };
 
   // Generate days based on weekOffset and showWeekends
   useEffect(() => {
@@ -76,16 +104,10 @@ export const App = () => {
 
   const handleAddItem = (dayDate: string) => {
     if (newItems[dayDate].trim() === '') return;
-
-    // Create the new item
     const newItem = { id: Date.now().toString(), text: newItems[dayDate] };
-
-    // Update the ref with the new item
     const currentItems = itemsRef.current[dayDate] || [];
     itemsRef.current[dayDate] = [...currentItems, newItem];
-
-    // Update the state
-    setWeekDays(prevDays => 
+    setWeekDays(prevDays =>
       prevDays.map(day => {
         if (day.date === dayDate) {
           return {
@@ -96,23 +118,16 @@ export const App = () => {
         return day;
       })
     );
-
-    // Clear the input
     setNewItems(prev => ({
       ...prev,
       [dayDate]: ''
     }));
-
-    // Update URL with the new state
-    const state = {
+    updateUrlWithState({
       weekOffset,
       showWeekends,
-      items: itemsRef.current
-    };
-    updateUrlWithState(state);
-
-    // Focus on the input field after adding an item
-    // This is optional but provides better UX
+      items: itemsRef.current,
+      newItems: { ...newItems, [dayDate]: '' }
+    });
     setTimeout(() => {
       const inputs = document.querySelectorAll(`input[value=""]`);
       if (inputs.length > 0) {
@@ -122,10 +137,16 @@ export const App = () => {
   };
 
   const handleInputChange = (dayDate: string, value: string) => {
-    setNewItems(prev => ({
-      ...prev,
-      [dayDate]: value
-    }));
+    setNewItems(prev => {
+      const updated = { ...prev, [dayDate]: value };
+      updateUrlWithState({
+        weekOffset,
+        showWeekends,
+        items: itemsRef.current,
+        newItems: updated
+      });
+      return updated;
+    });
   };
 
   const generateRichText = useCallback(() => {
@@ -142,7 +163,6 @@ export const App = () => {
       date.setDate(monday.getDate() + i);
 
       const isoDate = formatISODate(date);
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
       const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
 
       // Skip weekends in rich text if showWeekends is false
@@ -153,7 +173,9 @@ export const App = () => {
       // Use items from ref if they exist
       const items = itemsRef.current[isoDate] || [];
 
-      let dayContent = `<h3>${isoDate} ${dayName}</h3>\n<ul>\n`;
+      // Use the selected dateFormat from the search param
+      const luxonDate = DateTime.fromJSDate(date);
+      let dayContent = `<h3>${luxonDate.toFormat(dateFormat)}</h3>\n<ul>\n`;
 
       if (items.length === 0) {
         dayContent += '  <li></li>\n';
@@ -169,19 +191,45 @@ export const App = () => {
 
     // Reverse the order of days and join them
     return dayContents.reverse().join('');
-  }, [weekOffset, showWeekends]);
+  }, [weekOffset, showWeekends, dateFormat]);
 
   return (
     <div className="app-container">
-      <h1>Weekly Planner</h1>
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <h1>Weekly Planner</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <select
+            value={dateFormat}
+            onChange={e => setDateFormat(e.target.value)}
+            style={{ minWidth: 140 }}
+          >
+            <option value="yyyy-MM-dd">YYYY-MM-DD</option>
+            <option value="MM/dd/yyyy">MM/DD/YYYY</option>
+            <option value="dd MMM, yyyy">DD MMM, YYYY</option>
+            <option value="cccc, d LLLL yyyy">Full (Monday, 7 August 2025)</option>
+            <option value="d/M/yyyy">7/8/2025</option>
+            <option value="EEE, MMM d">Wed, Aug 7</option>
+            <option value="MMM d, yyyy">Aug 7, 2025</option>
+            <option value="dd.MM.yyyy">07.08.2025</option>
+            <option value="MMMM d, yyyy">August 7, 2025</option>
+            <option value="__custom__">Custom...</option>
+          </select>
+          <input
+            type="text"
+            value={dateFormat}
+            onChange={e => setDateFormat(e.target.value)}
+            style={{ minWidth: 140 }}
+            placeholder="Custom format"
+          />
+        </div>
+      </div>
       <div className="content-container">
         <div className="days-list">
           <WeekNavigation
             weekOffset={weekOffset}
-            setWeekOffset={setWeekOffset}
+            setWeekOffset={setWeekOffsetAndUrl}
             showWeekends={showWeekends}
-            setShowWeekends={setShowWeekends}
+            setShowWeekends={setShowWeekendsAndUrl}
             firstDayDate={weekDays.length > 0 ? weekDays[0].date : ''}
           />
 
