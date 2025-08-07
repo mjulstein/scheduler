@@ -32,7 +32,7 @@ export const DayCard: FC<DayCardProps> = ({
 
   return (
     <div key={day.date} className={`day-card ${day.isToday ? 'today' : ''}`}>
-      <h3>{day.date} {day.dayName}</h3>
+      <h3>{day.dayName}</h3>
       <ul className="items-list">
         {day.items.length > 0 ? (
           day.items.map(item => (

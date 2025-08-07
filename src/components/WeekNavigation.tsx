@@ -1,12 +1,13 @@
 // WeekNavigation.tsx - Component for week navigation controls
 import { type FC } from 'react';
-import { getWeekNumber } from '../dateUtils';
+import { getMondayOfWeek } from '../dateUtils';
+import { DateTime } from 'luxon';
 
 interface WeekNavigationProps {
   weekOffset: number;
-  setWeekOffset: (offset: number | ((prev: number) => number)) => void;
+  setWeekOffset:  (prev: number) =>  void;
   showWeekends: boolean;
-  setShowWeekends: (show: boolean | ((prev: boolean) => boolean)) => void;
+  setShowWeekends: (prev: boolean) => void;
   firstDayDate: string;
 }
 
@@ -14,6 +15,7 @@ interface WeekNavigationProps {
  * Component for navigating between weeks and toggling weekend visibility
  */
 export const WeekNavigation: FC<WeekNavigationProps> = ({
+  weekOffset,
   setWeekOffset,
   showWeekends,
   setShowWeekends,
@@ -21,17 +23,17 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
 }) => {
   // Navigate to previous week
   const goToPreviousWeek = () => {
-    setWeekOffset(prev => prev - 1);
+    setWeekOffset(weekOffset - 1);
   };
 
   // Navigate to next week
   const goToNextWeek = () => {
-    setWeekOffset(prev => prev + 1);
+    setWeekOffset(weekOffset + 1);
   };
 
   // Toggle weekend visibility
   const toggleWeekends = () => {
-    setShowWeekends(prev => !prev);
+    setShowWeekends(!showWeekends);
   };
 
   return (
@@ -40,13 +42,18 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
         &larr; Previous Week
       </button>
       <span className="week-number">
-        Week {firstDayDate ? getWeekNumber(new Date(firstDayDate)) : ''}
+        Week {(() => {
+          // Always use the actual Monday for the current week, regardless of visible days
+          const today = new Date();
+          const monday = getMondayOfWeek(today, weekOffset);
+          return DateTime.fromJSDate(monday).weekNumber;
+        })()}
       </span>
       <button onClick={goToNextWeek} className="nav-button">
         Next Week &rarr;
       </button>
-      <button 
-        onClick={toggleWeekends} 
+      <button
+        onClick={toggleWeekends}
         className="toggle-button"
       >
         {showWeekends ? 'Hide Weekends' : 'Show Weekends'}
