@@ -1,5 +1,5 @@
 // App.tsx - Main application component
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import type { DayData, DayItem } from './Types';
 import { getStateFromUrl, updateUrlWithState } from './urlState';
@@ -66,6 +66,21 @@ export const App = () => {
       showWeekends: value,
       items: itemsRef.current,
       newItems
+    });
+  };
+
+  // Heading level state from URL
+  const initialHeadingLevel = searchParams.get('headingLevel') || 'h3';
+  const [headingLevel, setHeadingLevel] = useState<string>(initialHeadingLevel);
+
+  // Helper to update headingLevel and search param together
+  const setHeadingLevelAndUrl = (value: string) => {
+    setHeadingLevel(value);
+    setSearchParams(params => {
+      params.set('headingLevel', value);
+      params.set('dateFormat', dateFormat);
+      params.set('weekOffset', String(getWeekOffset()));
+      return params;
     });
   };
 
@@ -165,51 +180,6 @@ export const App = () => {
     });
   };
 
-  const generateRichText = useCallback(() => {
-    const weekOffset = getWeekOffset();
-    // Get all days for the current week, including weekends for rich text
-    const today = new Date();
-    const monday = getMondayOfWeek(today, weekOffset);
-
-    // Array to collect day content
-    const dayContents = [];
-
-    // Generate all days for rich text
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-
-      const isoDate = formatISODate(date);
-      const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
-
-      // Skip weekends in rich text if showWeekends is false
-      if (!showWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
-        continue;
-      }
-
-      // Use items from ref if they exist
-      const items = itemsRef.current[isoDate] || [];
-
-      // Use the selected dateFormat from the search param
-      const luxonDate = DateTime.fromJSDate(date);
-      let dayContent = `<h3>${luxonDate.toFormat(dateFormat)}</h3>\n<ul>\n`;
-
-      if (items.length === 0) {
-        dayContent += '  <li></li>\n';
-      } else {
-        items.forEach(item => {
-          dayContent += `  <li>${item.text}</li>\n`;
-        });
-      }
-
-      dayContent += '</ul>\n\n';
-      dayContents.push(dayContent);
-    }
-
-    // Reverse the order of days and join them
-    return dayContents.reverse().join('');
-  }, [searchParams, showWeekends, dateFormat]);
-
   return (
     <div className="app-container">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -260,8 +230,16 @@ export const App = () => {
             />
           ))}
         </div>
-
-        <RichTextSection richTextContent={generateRichText()} />
+        <div>
+          <RichTextSection
+            weekDays={weekDays}
+            itemsRef={itemsRef}
+            dateFormat={dateFormat}
+            showWeekends={showWeekends}
+            headingLevel={headingLevel}
+            setHeadingLevel={setHeadingLevelAndUrl}
+          />
+        </div>
       </div>
     </div>
   );

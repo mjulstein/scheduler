@@ -1,17 +1,46 @@
 // RichTextSection.tsx - Component for displaying and copying rich text
-import { type FC, useCallback, useState } from 'react';
+import React, { type FC, useCallback, useState, useMemo } from 'react';
+import { generateRichText } from '../generateRichText';
+import type { DayData, DayItem } from '../Types';
 
 interface RichTextSectionProps {
-  richTextContent: string;
+  weekDays: DayData[];
+  itemsRef: React.MutableRefObject<{ [date: string]: DayItem[] }>;
+  dateFormat: string;
+  showWeekends: boolean;
+  headingLevel: string;
+  setHeadingLevel: (level: string) => void;
 }
 
 /**
  * Component for displaying rich text and providing copy functionality
  */
 export const RichTextSection: FC<RichTextSectionProps> = ({
-  richTextContent
+  weekDays,
+  itemsRef,
+  dateFormat,
+  showWeekends,
+  headingLevel,
+  setHeadingLevel
 }) => {
   const [copyStatus, setCopyStatus] = useState<string>('');
+
+  // Generate and mutate rich text when dependencies change
+  const richTextContent = useMemo(() => {
+    // Generate with h3 as base
+    let html = generateRichText({
+      weekDays,
+      itemsRef,
+      dateFormat,
+      headingLevel: 'h3',
+      showWeekends
+    });
+    // Replace all <h3> and </h3> with selected headingLevel
+    if (headingLevel !== 'h3') {
+      html = html.replace(/<h3>/g, `<${headingLevel}>`).replace(/<\/h3>/g, `</${headingLevel}>`);
+    }
+    return html;
+  }, [weekDays, itemsRef, dateFormat, showWeekends, headingLevel]);
 
   // Function to copy rich text to clipboard
   const copyRichText = useCallback(() => {
@@ -22,10 +51,6 @@ export const RichTextSection: FC<RichTextSectionProps> = ({
       return;
     }
 
-    // Create a temporary element to properly extract the text with formatting
-    const tempElement = document.createElement('div');
-    tempElement.innerHTML = richTextElement.innerHTML;
-    
     // Create a range and selection
     const range = document.createRange();
     range.selectNodeContents(richTextElement);
@@ -57,7 +82,27 @@ export const RichTextSection: FC<RichTextSectionProps> = ({
 
   return (
     <div className="rich-text">
-      <h2>Rich Text for Confluence</h2>
+      <h2 style={{ margin: 0 }}>Rich Text for Confluence</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0 1rem 0' }}>
+        <label htmlFor="heading-size-select" style={{ fontWeight: 500 }}>
+          Heading size for generated content:
+        </label>
+        <select
+          id="heading-size-select"
+          value={headingLevel}
+          onChange={e => setHeadingLevel(e.target.value)}
+          style={{ height: '2rem' }}
+          aria-label="Select heading size for generated content"
+        >
+          <option value="h1">H1</option>
+          <option value="h2">H2</option>
+          <option value="h3">H3</option>
+          <option value="h4">H4</option>
+          <option value="h5">H5</option>
+          <option value="h6">H6</option>
+          <option value="p">Normal</option>
+        </select>
+      </div>
       <div className="rich-text-container">
         <div 
           className="rich-text-content"
