@@ -1,6 +1,7 @@
 // WeekNavigation.tsx - Component for week navigation controls
 import { type FC } from 'react';
-import { getWeekNumber } from '../dateUtils';
+import { getMondayOfWeek } from '../dateUtils';
+import { DateTime } from 'luxon';
 
 interface WeekNavigationProps {
   weekOffset: number;
@@ -41,7 +42,12 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
         &larr; Previous Week
       </button>
       <span className="week-number">
-        Week {firstDayDate ? getWeekNumber(new Date(firstDayDate)) : ''}
+        Week {(() => {
+          // Always use the actual Monday for the current week, regardless of visible days
+          const today = new Date();
+          const monday = getMondayOfWeek(today, weekOffset);
+          return DateTime.fromJSDate(monday).weekNumber;
+        })()}
       </span>
       <button onClick={goToNextWeek} className="nav-button">
         Next Week &rarr;

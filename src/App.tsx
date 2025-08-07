@@ -135,13 +135,13 @@ export const App = () => {
 
   // Set page title to "Week <weeknumber> schedule" on load and when week changes
   useEffect(() => {
+    // Use the actual Monday for the current week, regardless of visible days
     const weekOffset = getWeekOffset();
     const today = new Date();
     const monday = getMondayOfWeek(today, weekOffset);
-    // Use ISO week number (Luxon)
     const weekNumber = DateTime.fromJSDate(monday).weekNumber;
     document.title = `Week ${weekNumber} schedule`;
-  }, [searchParams]);
+  }, [searchParams, showWeekends, dateFormat]);
 
   const handleAddItem = (dayDate: string) => {
     if (newItems[dayDate].trim() === '') return;
