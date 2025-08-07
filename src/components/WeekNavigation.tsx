@@ -18,8 +18,7 @@ export const WeekNavigation: FC<WeekNavigationProps> = ({
   weekOffset,
   setWeekOffset,
   showWeekends,
-  setShowWeekends,
-  firstDayDate
+  setShowWeekends
 }) => {
   // Navigate to previous week
   const goToPreviousWeek = () => {
