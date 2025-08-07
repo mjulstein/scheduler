@@ -133,6 +133,16 @@ export const App = () => {
     setWeekDays(days.reverse());
   }, [searchParams, showWeekends, dateFormat]);
 
+  // Set page title to "Week <weeknumber> schedule" on load and when week changes
+  useEffect(() => {
+    const weekOffset = getWeekOffset();
+    const today = new Date();
+    const monday = getMondayOfWeek(today, weekOffset);
+    // Use ISO week number (Luxon)
+    const weekNumber = DateTime.fromJSDate(monday).weekNumber;
+    document.title = `Week ${weekNumber} schedule`;
+  }, [searchParams]);
+
   const handleAddItem = (dayDate: string) => {
     if (newItems[dayDate].trim() === '') return;
     const newItem = { id: Date.now().toString(), text: newItems[dayDate] };
