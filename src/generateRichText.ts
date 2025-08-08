@@ -32,6 +32,5 @@ export function generateRichText({
     dayContent += '</ul>\n\n';
     dayContents.push(dayContent);
   }
-  return dayContents.reverse().join('');
+  return dayContents.join('');
 }
-
