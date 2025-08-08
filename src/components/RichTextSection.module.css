@@ -1,0 +1,24 @@
+.tools {
+    display: flex;
+    gap: 1rem;
+}
+.copyButton {
+    padding: 0.5rem 1rem;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.copyButton:hover {
+    background-color: #3a80d2;
+}
+.status {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: black;
+}

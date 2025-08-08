@@ -18,8 +18,12 @@ export const App = () => {
   const urlState = getStateFromUrl();
 
   const [weekDays, setWeekDays] = useState<DayData[]>([]);
-  const [newItems, setNewItems] = useState<{ [key: string]: string }>(urlState?.newItems || {});
-  const [showWeekends, setShowWeekends] = useState<boolean>(urlState?.showWeekends || false);
+  const [newItems, setNewItems] = useState<{ [key: string]: string }>(
+    urlState?.newItems || {}
+  );
+  const [showWeekends, setShowWeekends] = useState<boolean>(
+    urlState?.showWeekends || false
+  );
   const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
 
   // Date format and week offset state in search params
@@ -36,7 +40,7 @@ export const App = () => {
   // Helper to update dateFormat and search param together
   const setDateFormat = (value: string) => {
     setDateFormatState(value);
-    setSearchParams(params => {
+    setSearchParams((params) => {
       params.set('dateFormat', value);
       params.set('weekOffset', String(getWeekOffset()));
       return params;
@@ -45,7 +49,7 @@ export const App = () => {
 
   // Helper to update weekOffset and search param together
   const setWeekOffsetAndUrl = (value: number) => {
-    setSearchParams(params => {
+    setSearchParams((params) => {
       params.set('weekOffset', String(value));
       params.set('dateFormat', dateFormat);
       return params;
@@ -76,7 +80,7 @@ export const App = () => {
   // Helper to update headingLevel and search param together
   const setHeadingLevelAndUrl = (value: string) => {
     setHeadingLevel(value);
-    setSearchParams(params => {
+    setSearchParams((params) => {
       params.set('headingLevel', value);
       params.set('dateFormat', dateFormat);
       params.set('weekOffset', String(getWeekOffset()));
@@ -123,7 +127,7 @@ export const App = () => {
       });
 
       // Initialize newItems state if not already set
-      setNewItems(prev => ({
+      setNewItems((prev) => ({
         ...prev,
         [isoDate]: prev[isoDate] || ''
       }));
@@ -148,8 +152,8 @@ export const App = () => {
     const newItem = { id: Date.now().toString(), text: newItems[dayDate] };
     const currentItems = itemsRef.current[dayDate] || [];
     itemsRef.current[dayDate] = [...currentItems, newItem];
-    setWeekDays(prevDays =>
-      prevDays.map(day => {
+    setWeekDays((prevDays) =>
+      prevDays.map((day) => {
         if (day.date === dayDate) {
           return {
             ...day,
@@ -159,7 +163,7 @@ export const App = () => {
         return day;
       })
     );
-    setNewItems(prev => ({
+    setNewItems((prev) => ({
       ...prev,
       [dayDate]: ''
     }));
@@ -178,7 +182,7 @@ export const App = () => {
   };
 
   const handleInputChange = (dayDate: string, value: string) => {
-    setNewItems(prev => {
+    setNewItems((prev) => {
       const updated = { ...prev, [dayDate]: value };
       updateUrlWithState({
         weekOffset: getWeekOffset(),
@@ -191,19 +195,21 @@ export const App = () => {
   };
 
   return (
-    <div className="app-container">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <h1>Weekly Planner</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <select
             value={dateFormat}
-            onChange={e => setDateFormat(e.target.value)}
+            onChange={(e) => setDateFormat(e.target.value)}
             style={{ minWidth: 140 }}
           >
             <option value="yyyy-MM-dd">YYYY-MM-DD</option>
             <option value="MM/dd/yyyy">MM/DD/YYYY</option>
             <option value="dd MMM, yyyy">DD MMM, YYYY</option>
-            <option value="cccc, d LLLL yyyy">Full (Monday, 7 August 2025)</option>
+            <option value="cccc, d LLLL yyyy">
+              Full (Monday, 7 August 2025)
+            </option>
             <option value="d/M/yyyy">7/8/2025</option>
             <option value="EEE, MMM d">Wed, Aug 7</option>
             <option value="MMM d, yyyy">Aug 7, 2025</option>
@@ -214,43 +220,41 @@ export const App = () => {
           <input
             type="text"
             value={dateFormat}
-            onChange={e => setDateFormat(e.target.value)}
+            onChange={(e) => setDateFormat(e.target.value)}
             style={{ minWidth: 140 }}
             placeholder="Custom format"
           />
         </div>
-      </div>
-      <div className="content-container">
-        <div className="days-list">
-          <WeekNavigation
-            weekOffset={getWeekOffset()}
-            setWeekOffset={setWeekOffsetAndUrl}
-            showWeekends={showWeekends}
-            setShowWeekends={setShowWeekendsAndUrl}
-            firstDayDate={weekDays.length > 0 ? weekDays[0].date : ''}
-          />
+      </header>
+      <main id="main-content" className="days-list">
+        <WeekNavigation
+          weekOffset={getWeekOffset()}
+          setWeekOffset={setWeekOffsetAndUrl}
+          showWeekends={showWeekends}
+          setShowWeekends={setShowWeekendsAndUrl}
+          firstDayDate={weekDays.length > 0 ? weekDays[0].date : ''}
+        />
 
-          {weekDays.map(day => (
-            <DayCard
-              key={day.date}
-              day={day}
-              newItemText={newItems[day.date] || ''}
-              onInputChange={handleInputChange}
-              onAddItem={handleAddItem}
-            />
-          ))}
-        </div>
-        <div>
-          <RichTextSection
-            weekDays={weekDays}
-            itemsRef={itemsRef}
-            dateFormat={dateFormat}
-            showWeekends={showWeekends}
-            headingLevel={headingLevel}
-            setHeadingLevel={setHeadingLevelAndUrl}
+        {weekDays.map((day) => (
+          <DayCard
+            key={day.date}
+            day={day}
+            newItemText={newItems[day.date] || ''}
+            onInputChange={handleInputChange}
+            onAddItem={handleAddItem}
           />
-        </div>
-      </div>
-    </div>
+        ))}
+      </main>
+      <footer>
+        <RichTextSection
+          weekDays={weekDays}
+          itemsRef={itemsRef}
+          dateFormat={dateFormat}
+          showWeekends={showWeekends}
+          headingLevel={headingLevel}
+          setHeadingLevel={setHeadingLevelAndUrl}
+        />
+      </footer>
+    </>
   );
 };
