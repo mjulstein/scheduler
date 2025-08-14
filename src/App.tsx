@@ -20,7 +20,7 @@ export const App = () => {
 
   const [weekDays, setWeekDays] = useState<DayData[]>([]);
   const [newItems, setNewItems] = useState<{ [key: string]: string }>({});
-  const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
+  const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState || {});
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -188,7 +188,7 @@ export const App = () => {
     const normalized = normalizeToIsoMonday(iso);
     replaceFirstPathSegment(normalized, false);
     // Base64 hash only stores items
-    updateUrlWithState({ items: itemsRef.current });
+    updateUrlWithState(itemsRef.current);
   };
 
   const handleAddItem = (dayDate: string) => {
@@ -204,7 +204,7 @@ export const App = () => {
     setNewItems((prev) => ({ ...prev, [dayDate]: '' }));
     ensureWeekStartInPath();
     // Persist only items to base64 hash
-    updateUrlWithState({ items: itemsRef.current });
+    updateUrlWithState(itemsRef.current);
     setTimeout(() => {
       const inputs = document.querySelectorAll(`input[value=""]`);
       if (inputs.length > 0) (inputs[0] as HTMLInputElement).focus();
