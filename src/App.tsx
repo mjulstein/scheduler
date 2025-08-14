@@ -221,6 +221,16 @@ export const App = () => {
     updateUrlWithState(itemsRef.current);
   };
 
+  const handleDeleteItem = (dayDate: string, itemId: string) => {
+    const currentItems = itemsRef.current[dayDate] || [];
+    const updated = currentItems.filter((i) => i.id !== itemId);
+    itemsRef.current[dayDate] = updated;
+    setWeekDays((prevDays) =>
+      prevDays.map((d) => (d.date === dayDate ? { ...d, items: updated } : d))
+    );
+    updateUrlWithState(itemsRef.current);
+  };
+
   const handleReset = () => {
     // Clear in-memory state
     itemsRef.current = {};
@@ -308,6 +318,18 @@ export const App = () => {
             onInputChange={handleInputChange}
             onAddItem={handleAddItem}
             onSaveItem={handleSaveItem}
+            onDeleteItem={handleDeleteItem}
+            onReorderItems={(dayDate, newItemsForDay) => {
+              // Update in-memory items and refresh day list
+              itemsRef.current[dayDate] = newItemsForDay;
+              setWeekDays((prevDays) =>
+                prevDays.map((d) =>
+                  d.date === dayDate ? { ...d, items: newItemsForDay } : d
+                )
+              );
+              // Persist only items to base64 hash
+              updateUrlWithState(itemsRef.current);
+            }}
           />
         ))}
       </main>

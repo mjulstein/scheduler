@@ -1,0 +1,96 @@
+/* Styles scoped to DayCard component via CSS Modules */
+.dayCard {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+}
+
+.today {
+  border-color: #4a90e2;
+}
+
+.dayCard h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dayCard ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.dayCard li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Row for item with left handle, middle content, right context */
+.itemRow {
+  /* inherits display:flex from li rule */
+  position: relative;
+}
+
+.itemMain {
+  flex: 1;
+  margin: 0 0.5rem;
+}
+
+.dragHandle {
+  cursor: grab;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Visually offset the drag handle upwards while dragging to align closer to drop target */
+.dragHandleDragging {
+  transform: translateY(-100%);
+}
+
+.contextMenuButton {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Thin horizontal drop indicator between items where the dragged item will be inserted */
+.dropIndicator {
+  height: 0;
+  border-top: 2px dashed #4a90e2;
+  margin: 4px 0 4px 24px; /* indent to align with text area (after handle) */
+}
+
+/* Simple popover for the context menu */
+.menuPopover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.emptyItem {
+  list-style-type: disc;
+  display: flex;
+  align-items: center;
+}
+
+.inlineInput {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+}
