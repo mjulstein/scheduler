@@ -7,7 +7,12 @@ import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
 import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
-import { useSearchParams, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import {
+  useSearchParams,
+  useLocation,
+  useNavigate,
+  Navigate
+} from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { SettingsDialog } from './components/SettingsDialog';
 
@@ -41,7 +46,9 @@ export const App = () => {
   const normalizeToIsoMonday = (iso: string): string => {
     const dt = DateTime.fromISO(iso);
     if (!dt.isValid) return iso;
-    return dt.set({ weekday: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }).toISODate()!;
+    return dt
+      .set({ weekday: 1, hour: 0, minute: 0, second: 0, millisecond: 0 })
+      .toISODate()!;
   };
 
   const getFirstPathSegment = (): string | null => {
@@ -144,6 +151,7 @@ export const App = () => {
     }
 
     setWeekDays(days.reverse());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, showWeekends, dateFormat]);
 
   // Set page title based on path weekStart
@@ -162,6 +170,7 @@ export const App = () => {
     const weekNumber = monday.weekNumber;
     const weekYear = monday.weekYear;
     document.title = `Week ${weekNumber} ${weekYear}`;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, showWeekends, dateFormat]);
 
   // Week navigation updates the first path segment
@@ -179,7 +188,9 @@ export const App = () => {
     itemsRef.current[dayDate] = [...currentItems, newItem];
     setWeekDays((prevDays) =>
       prevDays.map((day) =>
-        day.date === dayDate ? { ...day, items: itemsRef.current[dayDate] } : day
+        day.date === dayDate
+          ? { ...day, items: itemsRef.current[dayDate] }
+          : day
       )
     );
     setNewItems((prev) => ({ ...prev, [dayDate]: '' }));
@@ -195,6 +206,19 @@ export const App = () => {
   const handleInputChange = (dayDate: string, value: string) => {
     setNewItems((prev) => ({ ...prev, [dayDate]: value }));
     // Do not persist free-text inputs in base64 or search params
+  };
+
+  const handleSaveItem = (dayDate: string, itemId: string, value: string) => {
+    const currentItems = itemsRef.current[dayDate] || [];
+    const idx = currentItems.findIndex((i) => i.id === itemId);
+    if (idx === -1) return;
+    const updated = [...currentItems];
+    updated[idx] = { ...updated[idx], text: value };
+    itemsRef.current[dayDate] = updated;
+    setWeekDays((prevDays) =>
+      prevDays.map((d) => (d.date === dayDate ? { ...d, items: updated } : d))
+    );
+    updateUrlWithState(itemsRef.current);
   };
 
   const handleReset = () => {
@@ -224,20 +248,31 @@ export const App = () => {
           const currentMonday = DateTime.now().set({ weekday: 1 }).toISODate()!;
           const segs = location.pathname.split('/').filter(Boolean).slice(1);
           const newPath = '/' + [currentMonday, ...segs].join('/');
-          return <Navigate to={newPath + location.search + location.hash} replace />;
+          return (
+            <Navigate to={newPath + location.search + location.hash} replace />
+          );
         }
         const mondayIso = normalizeToIsoMonday(seg);
         if (mondayIso !== seg) {
           const segs = location.pathname.split('/').filter(Boolean).slice(1);
           const newPath = '/' + [mondayIso, ...segs].join('/');
-          return <Navigate to={newPath + location.search + location.hash} replace />;
+          return (
+            <Navigate to={newPath + location.search + location.hash} replace />
+          );
         }
         return null;
       })()}
 
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          justifyContent: 'space-between'
+        }}
+      >
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          Weekly Planner
+          Week Planner
         </h1>
         <button
           className="icon-button"
@@ -249,7 +284,14 @@ export const App = () => {
         </button>
       </header>
       <main id="main-content" className="days-list">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 8
+          }}
+        >
           <WeekNavigation
             weekStartISO={getWeekStartISO()}
             setWeekStartISO={setWeekStartISO}
@@ -265,6 +307,7 @@ export const App = () => {
             newItemText={newItems[day.date] || ''}
             onInputChange={handleInputChange}
             onAddItem={handleAddItem}
+            onSaveItem={handleSaveItem}
           />
         ))}
       </main>

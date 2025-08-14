@@ -60,10 +60,20 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({
   }, [isOpen, onClose]);
 
   return (
-    <dialog ref={dialogRef} aria-labelledby="settings-title" className={classes.dialog}>
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="settings-title"
+      className={classes.dialog}
+    >
       <header className={classes.header}>
-        <h2 id="settings-title" className={classes.title}>Settings</h2>
-        <button className={classes.iconButton} aria-label="Close settings" onClick={onClose}>
+        <h2 id="settings-title" className={classes.title}>
+          Settings
+        </h2>
+        <button
+          className={classes.iconButton}
+          aria-label="Close settings"
+          onClick={onClose}
+        >
           ✕
         </button>
       </header>
@@ -72,7 +82,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({
         <fieldset className={classes.fieldset}>
           <legend className={classes.legend}>Date format</legend>
           <div className={classes.row}>
-            <label htmlFor="date-format-select" className="sr-only">Date format</label>
+            <label htmlFor="date-format-select" className="sr-only">
+              Date format
+            </label>
             <select
               id="date-format-select"
               value={selectValue}
@@ -92,15 +104,21 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({
               <option value="yyyy-MM-dd">2025-01-31 (yyyy-MM-dd)</option>
               <option value="MM/dd/yyyy">01/31/2025 (MM/dd/yyyy)</option>
               <option value="dd MMM, yyyy">31 Jan, 2025 (dd MMM, yyyy)</option>
-              <option value="cccc, d LLLL yyyy">Friday, 31 January 2025 (cccc, d LLLL yyyy)</option>
+              <option value="cccc, d LLLL yyyy">
+                Friday, 31 January 2025 (cccc, d LLLL yyyy)
+              </option>
               <option value="d/M/yyyy">31/1/2025 (d/M/yyyy)</option>
               <option value="EEE, MMM d">Fri, Jan 31 (EEE, MMM d)</option>
               <option value="MMM d, yyyy">Jan 31, 2025 (MMM d, yyyy)</option>
               <option value="dd.MM.yyyy">31.01.2025 (dd.MM.yyyy)</option>
-              <option value="MMMM d, yyyy">January 31, 2025 (MMMM d, yyyy)</option>
+              <option value="MMMM d, yyyy">
+                January 31, 2025 (MMMM d, yyyy)
+              </option>
               <option value="__custom__">Custom...</option>
             </select>
-            <label htmlFor="date-format-custom" className="sr-only">Custom format</label>
+            <label htmlFor="date-format-custom" className="sr-only">
+              Custom format
+            </label>
             <input
               id="date-format-custom"
               type="text"
@@ -114,16 +132,27 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({
         </fieldset>
       </section>
 
-      <section className={classes.dangerSection} aria-labelledby="danger-zone-title">
+      <section
+        className={classes.dangerSection}
+        aria-labelledby="danger-zone-title"
+      >
         <div>
-          <h3 id="danger-zone-title" className={classes.dangerTitle}>Danger zone</h3>
-          <p className={classes.dangerText}>Reset clears items and settings on this device.</p>
+          <h3 id="danger-zone-title" className={classes.dangerTitle}>
+            Danger zone
+          </h3>
+          <p className={classes.dangerText}>
+            Reset clears items and settings on this device.
+          </p>
         </div>
-        <button className={classes.dangerButton} onClick={onReset}>Reset state</button>
+        <button className={classes.dangerButton} onClick={onReset}>
+          Reset state
+        </button>
       </section>
 
       <footer className={classes.footer}>
-        <button className={classes.primaryButton} onClick={onClose}>Close</button>
+        <button className={classes.primaryButton} onClick={onClose}>
+          Close
+        </button>
       </footer>
     </dialog>
   );

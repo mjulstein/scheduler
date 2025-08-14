@@ -21,7 +21,7 @@ export const getMondayOfWeek = (date: Date, weekOffset: number = 0): Date => {
   const result = new Date(date);
   const day = date.getDay();
   const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  result.setDate(diff + (weekOffset * 7));
+  result.setDate(diff + weekOffset * 7);
   return result;
 };
 

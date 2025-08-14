@@ -173,7 +173,7 @@ export const App = () => {
 
   return (
     <div className="app-container">
-      <h1>Weekly Planner</h1>
+      <h1>Week Planner</h1>
 
       <div className="content-container">
         <div className="days-list">
