@@ -7,7 +7,7 @@ import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
 import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { SettingsDialog } from './components/SettingsDialog';
 
@@ -56,25 +56,6 @@ export const App = () => {
     const newPath = '/' + finalSegs.join('/');
     navigate(newPath + location.search + location.hash, { replace });
   };
-
-  // On mount or path change: validate/normalize first segment
-  useEffect(() => {
-    const first = getFirstPathSegment();
-    if (!first) return; // no subroutes; leave URL as-is
-
-    const dt = DateTime.fromISO(first);
-    if (!dt.isValid) {
-      // Not ISO => replace with current Monday
-      const currentMonday = DateTime.now().set({ weekday: 1 }).toISODate()!;
-      replaceFirstPathSegment(currentMonday);
-      return;
-    }
-    // If valid date but not Monday, normalize to Monday
-    const mondayIso = normalizeToIsoMonday(first);
-    if (mondayIso !== first) {
-      replaceFirstPathSegment(mondayIso);
-    }
-  }, [location.pathname]);
 
   // Helpers for dateFormat and headingLevel in search params
   const setDateFormat = (value: string) => {
@@ -235,6 +216,25 @@ export const App = () => {
 
   return (
     <>
+      {(() => {
+        const seg = getFirstPathSegment();
+        if (!seg) return null; // no subroutes; don't change URL
+        const dt = DateTime.fromISO(seg);
+        if (!dt.isValid) {
+          const currentMonday = DateTime.now().set({ weekday: 1 }).toISODate()!;
+          const segs = location.pathname.split('/').filter(Boolean).slice(1);
+          const newPath = '/' + [currentMonday, ...segs].join('/');
+          return <Navigate to={newPath + location.search + location.hash} replace />;
+        }
+        const mondayIso = normalizeToIsoMonday(seg);
+        if (mondayIso !== seg) {
+          const segs = location.pathname.split('/').filter(Boolean).slice(1);
+          const newPath = '/' + [mondayIso, ...segs].join('/');
+          return <Navigate to={newPath + location.search + location.hash} replace />;
+        }
+        return null;
+      })()}
+
       <header style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           Weekly Planner
