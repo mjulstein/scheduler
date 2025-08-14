@@ -129,12 +129,12 @@ footer > details > summary > h2 {
 
 .rich-text-content {
     font-family: Arial, sans-serif;
+    color: var(--text-color)
 }
 
 .rich-text-content h3 {
     margin-top: 1rem;
     margin-bottom: 0.5rem;
-    color: #333;
 }
 
 .rich-text-content ul {

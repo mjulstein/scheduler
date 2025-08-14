@@ -26,62 +26,97 @@ export const RichTextSection: FC<RichTextSectionProps> = ({
 }) => {
   const [copyStatus, setCopyStatus] = useState<string>('');
 
-  // Generate and mutate rich text when dependencies change
+  // Generate rich text when dependencies change using the selected heading level
   const richTextContent = useMemo(() => {
-    // Generate with h3 as base
-    let html = generateRichText({
+    return generateRichText({
       weekDays,
       itemsRef,
       dateFormat,
-      headingLevel: 'h3',
+      headingLevel,
       showWeekends
     });
-    // Replace all <h3> and </h3> with selected headingLevel
-    if (headingLevel !== 'h3') {
-      html = html
-        .replace(/<h3>/g, `<${headingLevel}>`)
-        .replace(/<\/h3>/g, `</${headingLevel}>`);
-    }
-    return html;
   }, [weekDays, itemsRef, dateFormat, showWeekends, headingLevel]);
 
-  // Function to copy rich text to clipboard
-  const copyRichText = useCallback(() => {
-    // Get the rendered content from the DOM
-    const richTextElement = document.querySelector('.rich-text-content');
-    if (!richTextElement) {
-      setCopyStatus('Error: Could not find rich text content');
-      return;
-    }
-
-    // Create a range and selection
-    const range = document.createRange();
-    range.selectNodeContents(richTextElement);
-
-    const selection = window.getSelection();
-    if (!selection) {
-      setCopyStatus('Error: Could not create selection');
-      return;
-    }
-
-    // Clear any existing selections
-    selection.removeAllRanges();
-
-    // Add the new range to the selection
-    selection.addRange(range);
-
-    // Execute the copy command
-    document.execCommand('copy');
-
-    // Clear the selection
-    selection.removeAllRanges();
-
-    setCopyStatus('Rich text copied to clipboard!');
-    // Clear the status message after 3 seconds
-    setTimeout(() => {
-      setCopyStatus('');
-    }, 3000);
+  const clearStatusSoon = useCallback(() => {
+    window.setTimeout(() => setCopyStatus(''), 3000);
   }, []);
+
+  const stripHtml = (html: string): string => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  // Function to copy rich text (HTML) to clipboard based on generator output
+  const copyRichText = useCallback(async () => {
+    const html = richTextContent;
+    try {
+      const ClipboardItemCtor = (
+        window as Window & {
+          ClipboardItem?: typeof ClipboardItem;
+        }
+      ).ClipboardItem;
+      const canWriteHtml =
+        !!navigator.clipboard &&
+        typeof navigator.clipboard.write === 'function' &&
+        !!ClipboardItemCtor;
+
+      if (canWriteHtml && ClipboardItemCtor) {
+        const blobHtml = new Blob([html], { type: 'text/html' });
+        const blobText = new Blob([stripHtml(html)], { type: 'text/plain' });
+        const item = new ClipboardItemCtor({
+          'text/html': blobHtml,
+          'text/plain': blobText
+        });
+        await navigator.clipboard.write([item]);
+        setCopyStatus('Rich text copied to clipboard!');
+        clearStatusSoon();
+        return;
+      }
+    } catch {
+      // fall through to fallback
+    }
+
+    // Fallback: select HTML in a hidden, editable container and execCommand('copy')
+    try {
+      const temp = document.createElement('div');
+      temp.setAttribute('contenteditable', 'true');
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      temp.style.top = '0';
+      temp.style.whiteSpace = 'pre-wrap';
+      temp.innerHTML = html;
+      document.body.appendChild(temp);
+
+      const range = document.createRange();
+      range.selectNodeContents(temp);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+
+      const succeeded = document.execCommand('copy');
+
+      selection?.removeAllRanges();
+      document.body.removeChild(temp);
+
+      if (succeeded) {
+        setCopyStatus('Rich text copied to clipboard!');
+      } else {
+        // As a last resort, try copying plain text
+        await navigator.clipboard?.writeText?.(stripHtml(html));
+        setCopyStatus('Copied as plain text.');
+      }
+      clearStatusSoon();
+    } catch {
+      try {
+        await navigator.clipboard?.writeText?.(stripHtml(html));
+        setCopyStatus('Copied as plain text.');
+      } catch {
+        setCopyStatus('Error: Could not copy');
+      }
+      clearStatusSoon();
+    }
+  }, [richTextContent, clearStatusSoon]);
 
   return (
     <details>
