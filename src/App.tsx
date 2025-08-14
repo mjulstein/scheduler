@@ -9,6 +9,7 @@ import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
 import { useSearchParams } from 'react-router-dom';
 import { DateTime } from 'luxon';
+import { SettingsDialog } from './components/SettingsDialog';
 
 /**
  * Main application component
@@ -26,15 +27,40 @@ export const App = () => {
   );
   const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
 
-  // Date format and week offset state in search params
+  // Date format and weekStart state in search params
   const [searchParams, setSearchParams] = useSearchParams();
   const initialDateFormat = searchParams.get('dateFormat') || 'yyyy-MM-dd';
   const [dateFormat, setDateFormatState] = useState<string>(initialDateFormat);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // Always read weekOffset from searchParams for rendering
-  const getWeekOffset = () => {
-    const param = searchParams.get('weekOffset');
-    return !isNaN(Number(param)) ? Number(param) : 0;
+  const normalizeToIsoMonday = (iso: string): string => {
+    const dt = DateTime.fromISO(iso);
+    if (!dt.isValid) return iso;
+    return dt.set({ weekday: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }).toISODate()!;
+  };
+
+  // Helper: get normalized Monday ISO from search param or today
+  const getWeekStartISO = (): string => {
+    const param = searchParams.get('weekStart');
+    if (param) {
+      return normalizeToIsoMonday(param);
+    }
+    const today = new Date();
+    const monday = getMondayOfWeek(today, 0);
+    return formatISODate(monday);
+  };
+
+  // Helper: ensure weekStart is present in URL (first mutation)
+  const ensureWeekStartInUrl = () => {
+    if (!searchParams.get('weekStart')) {
+      const iso = getWeekStartISO();
+      setSearchParams((params) => {
+        params.set('weekStart', normalizeToIsoMonday(iso));
+        // preserve other params already present
+        if (!params.get('dateFormat')) params.set('dateFormat', dateFormat);
+        return params;
+      });
+    }
   };
 
   // Helper to update dateFormat and search param together
@@ -42,31 +68,19 @@ export const App = () => {
     setDateFormatState(value);
     setSearchParams((params) => {
       params.set('dateFormat', value);
-      params.set('weekOffset', String(getWeekOffset()));
+      // only set weekStart if it already exists; first-time set happens on mutation handlers
+      const weekStart = params.get('weekStart');
+      if (weekStart) params.set('weekStart', normalizeToIsoMonday(weekStart));
       return params;
     });
   };
 
-  // Helper to update weekOffset and search param together
-  const setWeekOffsetAndUrl = (value: number) => {
-    setSearchParams((params) => {
-      params.set('weekOffset', String(value));
-      params.set('dateFormat', dateFormat);
-      return params;
-    });
-    updateUrlWithState({
-      weekOffset: value,
-      showWeekends,
-      items: itemsRef.current,
-      newItems
-    });
-  };
-
-  // Helper to update state and URL for showWeekends
+  // Setters to update state and URL for showWeekends
   const setShowWeekendsAndUrl = (value: boolean) => {
     setShowWeekends(value);
+    ensureWeekStartInUrl();
     updateUrlWithState({
-      weekOffset: getWeekOffset(),
+      weekStart: getWeekStartISO(),
       showWeekends: value,
       items: itemsRef.current,
       newItems
@@ -83,7 +97,8 @@ export const App = () => {
     setSearchParams((params) => {
       params.set('headingLevel', value);
       params.set('dateFormat', dateFormat);
-      params.set('weekOffset', String(getWeekOffset()));
+      const weekStart = params.get('weekStart');
+      if (weekStart) params.set('weekStart', normalizeToIsoMonday(weekStart));
       return params;
     });
   };
@@ -94,22 +109,21 @@ export const App = () => {
     return luxonDate.toFormat(dateFormat);
   };
 
-  // Generate days based on weekOffset and showWeekends
+  // Generate days based on weekStart and showWeekends
   useEffect(() => {
-    const weekOffset = getWeekOffset();
-    // Generate the week's days based on weekOffset
+    const weekStartISO = getWeekStartISO();
+
+    const monday = DateTime.fromISO(weekStartISO);
     const today = new Date();
     const todayISODate = formatISODate(today);
-    const monday = getMondayOfWeek(today, weekOffset);
 
     const days: DayData[] = [];
 
     for (let i = 0; i < 7; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      const isoDate = formatISODate(date);
-      const dayName = getFormattedDayName(date);
-      const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
+      const jsDate = monday.plus({ days: i }).toJSDate();
+      const isoDate = formatISODate(jsDate);
+      const dayName = getFormattedDayName(jsDate);
+      const dayOfWeek = jsDate.getDay(); // 0 is Sunday, 6 is Saturday
 
       // Skip weekends if showWeekends is false
       if (!showWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
@@ -137,15 +151,38 @@ export const App = () => {
     setWeekDays(days.reverse());
   }, [searchParams, showWeekends, dateFormat]);
 
-  // Set page title to "Week <weeknumber> schedule" on load and when week changes
+  // Set page title
   useEffect(() => {
-    // Use the actual Monday for the current week, regardless of visible days
-    const weekOffset = getWeekOffset();
-    const today = new Date();
-    const monday = getMondayOfWeek(today, weekOffset);
-    const weekNumber = DateTime.fromJSDate(monday).weekNumber;
-    document.title = `Week ${weekNumber} schedule`;
+    const weekStartParam = searchParams.get('weekStart');
+    if (!weekStartParam) {
+      document.title = 'Week Planner';
+      return;
+    }
+    const dt = DateTime.fromISO(normalizeToIsoMonday(weekStartParam));
+    if (!dt.isValid) {
+      document.title = 'Week Planner';
+      return;
+    }
+    const weekNumber = dt.weekNumber;
+    const weekYear = dt.weekYear;
+    document.title = `Week ${weekNumber} ${weekYear}`;
   }, [searchParams, showWeekends, dateFormat]);
+
+  const setWeekStartISO = (iso: string) => {
+    // Navigation is a mutation: always set weekStart param
+    const normalized = normalizeToIsoMonday(iso);
+    setSearchParams((params) => {
+      params.set('weekStart', normalized);
+      if (!params.get('dateFormat')) params.set('dateFormat', dateFormat);
+      return params;
+    });
+    updateUrlWithState({
+      weekStart: normalized,
+      showWeekends,
+      items: itemsRef.current,
+      newItems
+    });
+  };
 
   const handleAddItem = (dayDate: string) => {
     if (newItems[dayDate].trim() === '') return;
@@ -167,8 +204,9 @@ export const App = () => {
       ...prev,
       [dayDate]: ''
     }));
+    ensureWeekStartInUrl();
     updateUrlWithState({
-      weekOffset: getWeekOffset(),
+      weekStart: getWeekStartISO(),
       showWeekends,
       items: itemsRef.current,
       newItems: { ...newItems, [dayDate]: '' }
@@ -184,8 +222,9 @@ export const App = () => {
   const handleInputChange = (dayDate: string, value: string) => {
     setNewItems((prev) => {
       const updated = { ...prev, [dayDate]: value };
+      ensureWeekStartInUrl();
       updateUrlWithState({
-        weekOffset: getWeekOffset(),
+        weekStart: getWeekStartISO(),
         showWeekends,
         items: itemsRef.current,
         newItems: updated
@@ -194,46 +233,50 @@ export const App = () => {
     });
   };
 
+  const handleReset = () => {
+    // Clear in-memory state
+    itemsRef.current = {};
+    setNewItems({});
+    setShowWeekends(false);
+    setHeadingLevel('h3');
+    setDateFormatState('yyyy-MM-dd');
+
+    // Clear search params (removes weekStart, dateFormat, headingLevel, etc.)
+    setSearchParams({});
+
+    // Clear URL hash state
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState({}, '', url.toString());
+
+    // Reset title; effect will also enforce this
+    document.title = 'Week Planner';
+  };
+
   return (
     <>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <h1>Weekly Planner</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <select
-            value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value)}
-            style={{ minWidth: 140 }}
-          >
-            <option value="yyyy-MM-dd">YYYY-MM-DD</option>
-            <option value="MM/dd/yyyy">MM/DD/YYYY</option>
-            <option value="dd MMM, yyyy">DD MMM, YYYY</option>
-            <option value="cccc, d LLLL yyyy">
-              Full (Monday, 7 August 2025)
-            </option>
-            <option value="d/M/yyyy">7/8/2025</option>
-            <option value="EEE, MMM d">Wed, Aug 7</option>
-            <option value="MMM d, yyyy">Aug 7, 2025</option>
-            <option value="dd.MM.yyyy">07.08.2025</option>
-            <option value="MMMM d, yyyy">August 7, 2025</option>
-            <option value="__custom__">Custom...</option>
-          </select>
-          <input
-            type="text"
-            value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value)}
-            style={{ minWidth: 140 }}
-            placeholder="Custom format"
-          />
-        </div>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          Weekly Planner
+        </h1>
+        <button
+          className="icon-button"
+          aria-label="Open settings"
+          onClick={() => setIsSettingsOpen(true)}
+          title="Settings"
+        >
+          ⚙
+        </button>
       </header>
       <main id="main-content" className="days-list">
-        <WeekNavigation
-          weekOffset={getWeekOffset()}
-          setWeekOffset={setWeekOffsetAndUrl}
-          showWeekends={showWeekends}
-          setShowWeekends={setShowWeekendsAndUrl}
-          firstDayDate={weekDays.length > 0 ? weekDays[0].date : ''}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <WeekNavigation
+            weekStartISO={getWeekStartISO()}
+            setWeekStartISO={setWeekStartISO}
+            showWeekends={showWeekends}
+            setShowWeekends={setShowWeekendsAndUrl}
+          />
+        </div>
 
         {weekDays.map((day) => (
           <DayCard
@@ -255,6 +298,14 @@ export const App = () => {
           setHeadingLevel={setHeadingLevelAndUrl}
         />
       </footer>
+
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        dateFormat={dateFormat}
+        setDateFormat={setDateFormat}
+        onReset={handleReset}
+      />
     </>
   );
 };
