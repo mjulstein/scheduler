@@ -1,7 +1,7 @@
 // App.tsx - Main application component
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import type { DayData, DayItem } from './components/DayList/Types.ts';
+import type { DayData, DayItem } from './components/DayList/Types';
 import { getStateFromUrl, updateUrlWithState } from './urlState';
 import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';

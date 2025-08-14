@@ -1,6 +1,6 @@
 // DayList.tsx - Container for rendering a list of DayCards
 import type { FC } from 'react';
-import type { DayData, DayItem } from './Types.ts';
+import type { DayData, DayItem } from './Types';
 import { DayCard } from './DayCard';
 
 interface DayListProps {

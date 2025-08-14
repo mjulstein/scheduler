@@ -1,4 +1,4 @@
-import type { DayData, DayItem } from './components/DayList/Types.ts';
+import type { DayData, DayItem } from '../DayList';
 
 export function generateRichText({
   weekDays,
@@ -6,7 +6,7 @@ export function generateRichText({
   headingLevel
 }: {
   weekDays: DayData[];
-  itemsRef: React.MutableRefObject<{ [k: string]: DayItem[] }>;
+  itemsRef: React.MutableRefObject<Record<string, DayItem[]>>;
   dateFormat: string;
   headingLevel: string;
   showWeekends: boolean;

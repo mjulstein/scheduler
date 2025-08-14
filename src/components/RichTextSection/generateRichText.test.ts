@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateRichText } from './generateRichText';
-import type { DayData, DayItem } from './components/DayList/Types';
+import type { DayData, DayItem } from '../DayList';
 
 function makeWeek(weekStartISO: string, showWeekends: boolean) {
   // weekStartISO is Monday

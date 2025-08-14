@@ -1,8 +1,8 @@
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import { DayCard } from './DayCard.tsx';
-import type { DayData, DayItem } from '../Types.ts';
+import { DayCard } from './DayCard';
+import type { DayData, DayItem } from '../Types';
 import classes from './DayCard.module.css';
 import { useState } from 'react';
 

@@ -1,7 +1,7 @@
 // RichTextSection.tsx - Component for displaying and copying rich text
 import React, { type FC, useCallback, useState, useMemo } from 'react';
-import { generateRichText } from '../../generateRichText.ts';
-import type { DayData, DayItem } from '../DayList/Types.ts';
+import { generateRichText } from './generateRichText';
+import type { DayData, DayItem } from '../DayList';
 import classes from './RichTextSection.module.css';
 
 interface RichTextSectionProps {
@@ -87,6 +87,13 @@ export const RichTextSection: FC<RichTextSectionProps> = ({
       temp.style.whiteSpace = 'pre-wrap';
       temp.innerHTML = html;
       document.body.appendChild(temp);
+
+      // Focus the temp node to improve reliability across browsers
+      try {
+        temp.focus();
+      } catch {
+        // ignore focus errors
+      }
 
       const range = document.createRange();
       range.selectNodeContents(temp);

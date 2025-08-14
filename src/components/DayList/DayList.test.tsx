@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { DayData } from './Types.ts';
+import type { DayData } from './Types';
 import { DayList } from './DayList';
 import { useState } from 'react';
 

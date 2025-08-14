@@ -1,1 +1,1 @@
-export { DayCard } from './DayCard.tsx';
+export { DayCard } from './DayCard';

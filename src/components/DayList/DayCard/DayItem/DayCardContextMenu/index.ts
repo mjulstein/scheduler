@@ -1,1 +1,1 @@
-export { DayCardContextMenu } from './DayCardContextMenu.tsx';
+export { DayCardContextMenu } from './DayCardContextMenu';

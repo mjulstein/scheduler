@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DayItem } from './DayItem.tsx';
+import { DayItem } from './DayItem';
 
 describe('DayItem', () => {
   it('enters edit mode when text is clicked and caret goes to end by default', async () => {

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DayCardContextMenu } from './DayCardContextMenu.tsx';
+import { DayCardContextMenu } from './DayCardContextMenu';
 
 describe('DayCardContextMenu', () => {
   it('renders basic menu actions', () => {
