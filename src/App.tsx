@@ -5,7 +5,8 @@ import type { DayData, DayItem } from './Types';
 import { getStateFromUrl, updateUrlWithState } from './urlState';
 import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
-import { DayCard } from './components/DayCard';
+// Replace direct DayCard usage with DayList
+import { DayList } from './components/DayList';
 import { RichTextSection } from './components/RichTextSection';
 import {
   useSearchParams,
@@ -197,10 +198,6 @@ export const App = () => {
     ensureWeekStartInPath();
     // Persist only items to base64 hash
     updateUrlWithState(itemsRef.current);
-    setTimeout(() => {
-      const inputs = document.querySelectorAll(`input[value=""]`);
-      if (inputs.length > 0) (inputs[0] as HTMLInputElement).focus();
-    }, 0);
   };
 
   const handleInputChange = (dayDate: string, value: string) => {
@@ -273,28 +270,31 @@ export const App = () => {
         return null;
       })()}
 
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          justifyContent: 'space-between'
-        }}
-      >
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          Week Planner
-        </h1>
-        <button
-          className="icon-button"
-          aria-label="Open settings"
-          onClick={() => setIsSettingsOpen(true)}
-          title="Settings"
-        >
-          ⚙
-        </button>
-      </header>
-      <main id="main-content" className="days-list">
+      <header>
         <div
+          role="heading"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            justifyContent: 'space-between'
+          }}
+        >
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Week Planner
+          </h1>
+          <button
+            className="icon-button"
+            aria-label="Open settings"
+            onClick={() => setIsSettingsOpen(true)}
+            title="Settings"
+          >
+            ⚙<span className="sr-only">Open settings</span>
+          </button>
+        </div>
+        <div
+          role="toolbar"
+          aria-label="Toolbar"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -309,29 +309,27 @@ export const App = () => {
             setShowWeekends={setShowWeekendsAndUrl}
           />
         </div>
-
-        {weekDays.map((day) => (
-          <DayCard
-            key={day.date}
-            day={day}
-            newItemText={newItems[day.date] || ''}
-            onInputChange={handleInputChange}
-            onAddItem={handleAddItem}
-            onSaveItem={handleSaveItem}
-            onDeleteItem={handleDeleteItem}
-            onReorderItems={(dayDate, newItemsForDay) => {
-              // Update in-memory items and refresh day list
-              itemsRef.current[dayDate] = newItemsForDay;
-              setWeekDays((prevDays) =>
-                prevDays.map((d) =>
-                  d.date === dayDate ? { ...d, items: newItemsForDay } : d
-                )
-              );
-              // Persist only items to base64 hash
-              updateUrlWithState(itemsRef.current);
-            }}
-          />
-        ))}
+      </header>
+      <main id="main-content">
+        <DayList
+          days={weekDays}
+          newItemTextByDate={newItems}
+          onInputChange={handleInputChange}
+          onAddItem={handleAddItem}
+          onSaveItem={handleSaveItem}
+          onDeleteItem={handleDeleteItem}
+          onReorderItems={(dayDate, newItemsForDay) => {
+            // Update in-memory items and refresh day list
+            itemsRef.current[dayDate] = newItemsForDay;
+            setWeekDays((prevDays) =>
+              prevDays.map((d) =>
+                d.date === dayDate ? { ...d, items: newItemsForDay } : d
+              )
+            );
+            // Persist only items to base64 hash
+            updateUrlWithState(itemsRef.current);
+          }}
+        />
       </main>
       <footer>
         <RichTextSection

@@ -1,0 +1,6 @@
+/* Styles scoped to DayList component */
+.daysList {
+  flex: 1;
+  min-width: 300px;
+}
+

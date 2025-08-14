@@ -1,3 +1,4 @@
+
 #root {
     max-width: 1280px;
     margin: 0 auto;
@@ -9,18 +10,14 @@
     margin-bottom: 2rem;
 }
 
-.days-list {
-    flex: 1;
-    min-width: 300px;
-}
-
 .week-navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
     padding: 0.5rem;
-    background-color: #f5f5f5;
+    background-color: var(--card-background-color);
+    color: var(--text-color);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     flex-wrap: wrap;
@@ -98,15 +95,6 @@
     align-items: center;
 }
 
-.inline-input {
-    flex: 1;
-    padding: 0.25rem 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-left: 0.5rem;
-    font-size: 0.9rem;
-}
-
 footer,
 footer > details > summary {
     display: flex;
@@ -116,10 +104,12 @@ footer > details > summary {
     gap: 1rem;
     align-items: center;
     margin-bottom: .5rem;
-    & * {
-        align-items: center;
-        text-align: center;
-    }
+}
+
+/* Replace invalid nested selector with a valid descendant selector */
+footer > details > summary * {
+    align-items: center;
+    text-align: center;
 }
 
 footer > details > summary > h2 {
@@ -160,73 +150,6 @@ footer > details > summary > h2 {
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
-}
-
-
-.copy-status {
-    margin-top: 0.5rem;
-    color: #4a90e2;
-    font-size: 0.9rem;
-    text-align: right;
-    width: 100%;
-}
-
-/* Settings modal */
-.icon-button {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    line-height: 1;
-}
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: #fff;
-    width: min(640px, 92vw);
-    border-radius: 10px;
-    padding: 1rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.modal-section {
-    margin-bottom: 1rem;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.danger-button {
-    padding: 0.5rem 1rem;
-    background-color: #d9534f;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.danger-button:hover {
-    background-color: #c9302c;
 }
 
 /* Visually hidden but accessible to screen readers */

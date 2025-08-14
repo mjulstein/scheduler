@@ -1,6 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
 import { DayItem } from './DayItem.tsx';
 
 describe('DayItem', () => {
@@ -87,19 +86,13 @@ describe('DayItem', () => {
     expect(onSave).toHaveBeenCalledWith('1', 'First task updated');
   });
 
-  it('has a drag handle and a context menu button', () => {
+  it('has a context menu button', () => {
     render(<DayItem id="1" text="First task" />);
 
-    const buttons = screen.getAllByRole('button');
-    const dragHandle = buttons.find((b) =>
-      b.getAttribute('aria-label')?.startsWith('Reorder')
-    )!;
-    const contextBtn = buttons.find((b) =>
-      b.getAttribute('aria-label')?.startsWith('More options for')
-    )!;
+    const contextBtn = screen.getByRole('button', {
+      name: 'More options for First task'
+    });
 
-    expect(dragHandle).toHaveAccessibleName('Reorder First task');
-    expect(dragHandle).toHaveAttribute('draggable', 'true');
     expect(contextBtn).toHaveAccessibleName('More options for First task');
   });
 

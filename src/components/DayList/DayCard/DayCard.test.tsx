@@ -2,7 +2,7 @@ import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { DayCard } from './DayCard.tsx';
-import type { DayData, DayItem } from '../../Types.ts';
+import type { DayData, DayItem } from '../../../Types.ts';
 import classes from './DayCard.module.css';
 import { useState } from 'react';
 
@@ -49,8 +49,8 @@ describe('DayCard', () => {
     );
 
     const heading = screen.getByRole('heading', { name: 'Monday' });
-    // parent div should have dayCard and today classes from CSS module
-    const container = heading.closest('div');
+    // DayCard root is an <article> with dayCard and today classes from CSS module
+    const container = heading.closest('article');
     expect(container).toBeInTheDocument();
     expect(container).toHaveClass(classes.dayCard);
     expect(container).toHaveClass(classes.today);

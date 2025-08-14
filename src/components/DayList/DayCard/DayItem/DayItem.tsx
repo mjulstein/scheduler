@@ -1,6 +1,6 @@
 import type { FC, ChangeEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import classes from '../DayCard.module.css';
+import classes from './DayItem.module.css';
 import { DayCardContextMenu } from './DayCardContextMenu';
 
 interface DayItemProps {
@@ -8,20 +8,9 @@ interface DayItemProps {
   text: string;
   onSave?: (id: string, value: string) => void;
   onDelete?: (id: string) => void;
-  onDragStart?: (e: React.DragEvent, id: string) => void;
-  onDragEnd?: () => void;
-  isDragging?: boolean;
 }
 
-export const DayItem: FC<DayItemProps> = ({
-  id,
-  text,
-  onSave,
-  onDelete,
-  onDragStart,
-  onDragEnd,
-  isDragging
-}) => {
+export const DayItem: FC<DayItemProps> = ({ id, text, onSave, onDelete }) => {
   // Inline editing state and caret placement
   const [isEditing, setIsEditing] = useState(false);
   const [editingText, setEditingText] = useState<string>('');
@@ -77,18 +66,6 @@ export const DayItem: FC<DayItemProps> = ({
 
   return (
     <>
-      {/* Drag handle on the left */}
-      <button
-        aria-label={`Reorder ${text}`}
-        className={`${classes.dragHandle} ${isDragging ? classes.dragHandleDragging : ''}`.trim()}
-        draggable={true}
-        type="button"
-        onDragStart={(e) => onDragStart?.(e, id)}
-        onDragEnd={() => onDragEnd?.()}
-      >
-        ≡
-      </button>
-
       {/* Main text/edit area takes remaining space */}
       <div className={classes.itemMain}>
         {isEditing ? (

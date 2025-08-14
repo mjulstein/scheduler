@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import classes from './DayCardContextMenu.module.css';
 
 interface DayCardContextMenuProps {
   itemId: string;
@@ -11,8 +12,8 @@ export const DayCardContextMenu: FC<DayCardContextMenuProps> = ({
   onClose
 }) => {
   return (
-    <nav aria-label="Item actions">
-      <ul style={{ listStyle: 'none', padding: 4, margin: 0 }}>
+    <nav aria-label="Item actions" className={classes.contextMenu}>
+      <ul className={classes.list}>
         <li>
           <button
             type="button"

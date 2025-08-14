@@ -1,9 +1,9 @@
 // DayCard.tsx - Component for displaying a day's information and todo items
-import type { FC, KeyboardEvent, ChangeEvent } from 'react';
-import type { DayData, DayItem } from '../../Types.ts';
+import type { FC, KeyboardEvent, ChangeEvent, DragEvent } from 'react';
+import type { DayData, DayItem } from '../../../Types.ts';
 import clsx from 'clsx';
 import classes from './DayCard.module.css';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DayItem as DayItemComponent } from './DayItem';
 
 interface DayCardProps {
@@ -34,18 +34,55 @@ export const DayCard: FC<DayCardProps> = ({
     onInputChange(day.date, e.target.value);
   };
 
+  // Track the add-item input to restore focus after adding
+  const addInputRef = useRef<HTMLInputElement | null>(null);
+  const [shouldRefocusAddInput, setShouldRefocusAddInput] = useState(false);
+
   // Handle key down event (Enter key) for the "add new item" input
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      // Prevent form submissions or focus jumps
+      e.preventDefault();
+      setShouldRefocusAddInput(true);
       onAddItem(day.date);
     }
   };
+
+  // Small helper to avoid duplicating the input markup without creating a nested component
+  const renderAddItemInput = () => (
+    <input
+      ref={addInputRef}
+      type="text"
+      value={newItemText}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      placeholder="Add new item"
+      className={classes.inlineInput}
+    />
+  );
+
+  // After an add, keep focus on the add-item input (even when it moves to the end of the list)
+  useEffect(() => {
+    if (shouldRefocusAddInput && addInputRef.current) {
+      try {
+        const el = addInputRef.current;
+        el.focus();
+        // Place caret at end for convenience
+        const len = el.value.length;
+        el.setSelectionRange?.(len, len);
+      } catch {
+        // ignore in non-DOM environments
+      } finally {
+        setShouldRefocusAddInput(false);
+      }
+    }
+  }, [shouldRefocusAddInput, day.items.length]);
 
   // Drag-and-drop state
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, itemId: string) => {
+  const handleDragStart = (e: DragEvent, itemId: string) => {
     setDraggingId(itemId);
     try {
       e.dataTransfer.setData('text/plain', itemId);
@@ -60,7 +97,7 @@ export const DayCard: FC<DayCardProps> = ({
     setDropTargetIndex(null);
   };
 
-  const handleDropOnIndex = (e: React.DragEvent, targetIndex: number) => {
+  const handleDropOnIndex = (e: DragEvent, targetIndex: number) => {
     e.preventDefault();
     const items = day.items;
     let sourceId: string | null = draggingId;
@@ -101,7 +138,7 @@ export const DayCard: FC<DayCardProps> = ({
   };
 
   return (
-    <div
+    <article
       key={day.date}
       className={clsx(classes.dayCard, day.isToday && classes.today)}
     >
@@ -124,6 +161,18 @@ export const DayCard: FC<DayCardProps> = ({
               }}
               onDrop={(e) => handleDropOnIndex(e, index)}
             >
+              {/* Drag handle on the left */}
+              <button
+                aria-label={`Reorder ${item.text}`}
+                className={`${classes.dragHandle} ${draggingId === item.id ? classes.dragHandleDragging : ''}`.trim()}
+                draggable={true}
+                type="button"
+                onDragStart={(e) => handleDragStart(e, item.id)}
+                onDragEnd={handleDragEnd}
+              >
+                ≡
+              </button>
+
               {dropTargetIndex === index && (
                 <div aria-hidden className={classes.dropIndicator} />
               )}
@@ -139,23 +188,11 @@ export const DayCard: FC<DayCardProps> = ({
                 onDelete={
                   onDeleteItem ? (id) => onDeleteItem(day.date, id) : undefined
                 }
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                isDragging={draggingId === item.id}
               />
             </li>
           ))
         ) : (
-          <li className={classes.emptyItem}>
-            <input
-              type="text"
-              value={newItemText}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Add new item"
-              className={classes.inlineInput}
-            />
-          </li>
+          <li className={classes.emptyItem}>{renderAddItemInput()}</li>
         )}
         {day.items.length > 0 && (
           <li
@@ -179,17 +216,10 @@ export const DayCard: FC<DayCardProps> = ({
                 style={{ width: '100%', height: '1rem' }}
               />
             )}
-            <input
-              type="text"
-              value={newItemText}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Add new item"
-              className={classes.inlineInput}
-            />
+            {renderAddItemInput()}
           </li>
         )}
       </ul>
-    </div>
+    </article>
   );
 };
