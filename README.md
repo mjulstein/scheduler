@@ -1,69 +1,35 @@
-# React + TypeScript + Vite
+# Scheduler
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight weekly planner for quickly jotting down tasks per day, navigating weeks, and sharing your plan via the URL — no backend, no accounts.
 
-Currently, two official plugins are available:
+Live: https://scheduler.mju.no
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## What it does
+- Plan by week (the path’s first segment is the week’s Monday in ISO format)
+- Add, edit, and reorder items per day (drag-and-drop)
+- Toggle weekends on/off
+- Choose date format and heading level in Settings
+- Export a rich-text snippet (HTML) for copy/paste
+- Shareable links: items are stored compactly in the URL hash (base64). No data leaves your browser.
 
-## Expanding the ESLint configuration
+## Quick start
+- Requirements: Node 18+
+- Install deps: `npm install`
+- Start dev server: `npm run dev`
+- Run tests: `npm test`
+- Lint: `npm run lint`
+- Build: `npm run build` then preview: `npm run preview`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## How links encode your plan
+- Path: `/{mondayISO}` anchors the visible week (example: `/2025-01-06`).
+- Search params: `dateFormat`, `headingLevel`, `weekends=1`.
+- Hash: base64-encoded items only; safe to share and persists your list without a backend.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Tech
+React + TypeScript + Vite, React Router, Luxon, Vitest, Testing Library.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Experimental and AI Generated code
+This app is generated with the help of the Github Copilot plugin.  
+It started off as a simple side-project to generate week plans for Confluence.  
+Now it is used as a playground for learning new technologies.  
+If you intend to use it for anything serious, consider forking the repo and run it locally.

@@ -7,7 +7,8 @@
  */
 export const encodeStateToBase64 = (state: any): string => {
   // Accept both { items } wrapper or plain mapping
-  const items: Record<string, any[]> = (state && state.items) ? state.items : (state || {});
+  const items: Record<string, any[]> =
+    state && state.items ? state.items : state || {};
 
   // Convert to compact tuples
   const compact: Record<string, [string, string][]> = {};
@@ -33,12 +34,17 @@ export const encodeStateToBase64 = (state: any): string => {
  *  - Legacy: { items: { [date]: [{id, text}, ...] } }
  * Returns a normalized mapping: { [date]: [{ id, text }, ...] }
  */
-export const decodeBase64ToState = (base64: string): Record<string, { id: string; text: string }[]> | null => {
+export const decodeBase64ToState = (
+  base64: string
+): Record<string, { id: string; text: string }[]> | null => {
   try {
     const parsed = JSON.parse(atob(base64));
 
     // If legacy wrapper exists, unwrap it
-    const raw = (parsed && parsed.items && typeof parsed.items === 'object') ? parsed.items : parsed;
+    const raw =
+      parsed && parsed.items && typeof parsed.items === 'object'
+        ? parsed.items
+        : parsed;
 
     if (!raw || typeof raw !== 'object') return {};
 
@@ -76,7 +82,10 @@ export const updateUrlWithState = (state: any): void => {
  * Retrieves items mapping from URL hash (normalized object form)
  * @returns { [date]: [{ id, text }, ...] }
  */
-export const getStateFromUrl = (): Record<string, { id: string; text: string }[]> | null => {
+export const getStateFromUrl = (): Record<
+  string,
+  { id: string; text: string }[]
+> | null => {
   const hash = window.location.hash.slice(1);
   if (!hash) return null;
 

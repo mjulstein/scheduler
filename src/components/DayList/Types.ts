@@ -1,4 +1,3 @@
-// Types.ts - Type definitions for the application
 
 /**
  * Represents a single item in a day's todo list

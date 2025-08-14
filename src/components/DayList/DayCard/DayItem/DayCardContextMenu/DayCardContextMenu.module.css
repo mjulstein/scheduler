@@ -1,0 +1,38 @@
+.contextMenu {
+    margin: 0;
+    padding: 0;
+}
+
+.list {
+    list-style: none;
+    padding: .2rem 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    width: fit-content;
+    overflow: clip;
+    gap: 2px;
+}
+
+.list > li {
+    display: contents;
+}
+
+.list > li > button {
+    width: 100%;
+    max-width: calc(100vw - 2rem);
+    text-align: left;
+    border-radius: 0;
+    border: none;
+    outline: none;
+}
+
+/* on desktop*/
+@media (min-width: 768px) {
+    .list {
+        flex-direction: column;
+    }
+    .list > li > button {
+        max-width: 15rem;
+    }
+}

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import type { DayData, DayItem } from './Types';
+import type { DayData, DayItem } from './components/DayList/Types.ts';
 
 export function generateRichText({
   weekDays,

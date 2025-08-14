@@ -1,7 +1,7 @@
 // RichTextSection.tsx - Component for displaying and copying rich text
 import React, { type FC, useCallback, useState, useMemo } from 'react';
-import { generateRichText } from '../generateRichText';
-import type { DayData, DayItem } from '../Types';
+import { generateRichText } from '../../generateRichText.ts';
+import type { DayData, DayItem } from '../DayList/Types.ts';
 import classes from './RichTextSection.module.css';
 
 interface RichTextSectionProps {
@@ -86,7 +86,7 @@ export const RichTextSection: FC<RichTextSectionProps> = ({
   return (
     <details>
       <summary>
-        <h2 style={{ margin: 0 }}>Rich Text for Confluence</h2>
+        <h2 style={{ margin: 0 }}>Rich Text Preview</h2>
         <div className={classes.tools}>
           <label htmlFor="heading-size-select" style={{ fontWeight: 500 }}>
             Heading size for generated content:
