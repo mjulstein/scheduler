@@ -1,6 +1,6 @@
 // DayCard.tsx - Component for displaying a day's information and todo items
 import type { FC, KeyboardEvent, ChangeEvent, DragEvent } from 'react';
-import type { DayData, DayItem } from '../../../Types.ts';
+import type { DayData, DayItem } from '../Types.ts';
 import clsx from 'clsx';
 import classes from './DayCard.module.css';
 import { useEffect, useRef, useState } from 'react';
