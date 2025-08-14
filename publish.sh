@@ -12,6 +12,9 @@ npm run build
 mv ./dist ./docs
 echo "scheduler.mju.no" > docs/CNAME  # Add CNAME file for custom domain
 
+# 3b. Add SPA fallback for GitHub Pages deep links
+cp ./docs/index.html ./docs/404.html
+
 # 4. Add only docs folder and commit
 git add docs
 git commit -m "Deploy to docs branch"

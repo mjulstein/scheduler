@@ -7,7 +7,7 @@ import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
 import { DayCard } from './components/DayCard';
 import { RichTextSection } from './components/RichTextSection';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { SettingsDialog } from './components/SettingsDialog';
 
@@ -15,101 +15,120 @@ import { SettingsDialog } from './components/SettingsDialog';
  * Main application component
  */
 export const App = () => {
-  // Initialize state from URL or use defaults
+  // Initialize items from URL hash only
   const urlState = getStateFromUrl();
 
   const [weekDays, setWeekDays] = useState<DayData[]>([]);
-  const [newItems, setNewItems] = useState<{ [key: string]: string }>(
-    urlState?.newItems || {}
-  );
-  const [showWeekends, setShowWeekends] = useState<boolean>(
-    urlState?.showWeekends || false
-  );
+  const [newItems, setNewItems] = useState<{ [key: string]: string }>({});
   const itemsRef = useRef<{ [date: string]: DayItem[] }>(urlState?.items || {});
 
-  // Date format and weekStart state in search params
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Date format, heading level, and showWeekends in search params
   const [searchParams, setSearchParams] = useSearchParams();
   const initialDateFormat = searchParams.get('dateFormat') || 'yyyy-MM-dd';
   const [dateFormat, setDateFormatState] = useState<string>(initialDateFormat);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const initialHeadingLevel = searchParams.get('headingLevel') || 'h3';
+  const [headingLevel, setHeadingLevel] = useState<string>(initialHeadingLevel);
+  const initialShowWeekendsParam = searchParams.get('weekends');
+  const [showWeekends, setShowWeekends] = useState<boolean>(
+    initialShowWeekendsParam === '1' || initialShowWeekendsParam === 'true'
+  );
 
+  // Utils
   const normalizeToIsoMonday = (iso: string): string => {
     const dt = DateTime.fromISO(iso);
     if (!dt.isValid) return iso;
     return dt.set({ weekday: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }).toISODate()!;
   };
 
-  // Helper: get normalized Monday ISO from search param or today
+  const getFirstPathSegment = (): string | null => {
+    const segs = location.pathname.split('/').filter(Boolean);
+    return segs.length > 0 ? segs[0] : null;
+  };
+
+  const replaceFirstPathSegment = (newSeg: string | null, replace = true) => {
+    const segs = location.pathname.split('/').filter(Boolean);
+    const rest = segs.slice(1);
+    const finalSegs = newSeg ? [newSeg, ...rest] : rest;
+    const newPath = '/' + finalSegs.join('/');
+    navigate(newPath + location.search + location.hash, { replace });
+  };
+
+  // On mount or path change: validate/normalize first segment
+  useEffect(() => {
+    const first = getFirstPathSegment();
+    if (!first) return; // no subroutes; leave URL as-is
+
+    const dt = DateTime.fromISO(first);
+    if (!dt.isValid) {
+      // Not ISO => replace with current Monday
+      const currentMonday = DateTime.now().set({ weekday: 1 }).toISODate()!;
+      replaceFirstPathSegment(currentMonday);
+      return;
+    }
+    // If valid date but not Monday, normalize to Monday
+    const mondayIso = normalizeToIsoMonday(first);
+    if (mondayIso !== first) {
+      replaceFirstPathSegment(mondayIso);
+    }
+  }, [location.pathname]);
+
+  // Helpers for dateFormat and headingLevel in search params
+  const setDateFormat = (value: string) => {
+    setDateFormatState(value);
+    setSearchParams((params) => {
+      params.set('dateFormat', value);
+      return params;
+    });
+    ensureWeekStartInPath();
+  };
+
+  const setHeadingLevelAndUrl = (value: string) => {
+    setHeadingLevel(value);
+    setSearchParams((params) => {
+      params.set('headingLevel', value);
+      params.set('dateFormat', dateFormat);
+      return params;
+    });
+    ensureWeekStartInPath();
+  };
+
+  // Determine the current week's Monday ISO from path or today
   const getWeekStartISO = (): string => {
-    const param = searchParams.get('weekStart');
-    if (param) {
-      return normalizeToIsoMonday(param);
+    const first = getFirstPathSegment();
+    if (first) {
+      const dt = DateTime.fromISO(first);
+      if (dt.isValid) return normalizeToIsoMonday(first);
     }
     const today = new Date();
     const monday = getMondayOfWeek(today, 0);
     return formatISODate(monday);
   };
 
-  // Helper: ensure weekStart is present in URL (first mutation)
-  const ensureWeekStartInUrl = () => {
-    if (!searchParams.get('weekStart')) {
-      const iso = getWeekStartISO();
-      setSearchParams((params) => {
-        params.set('weekStart', normalizeToIsoMonday(iso));
-        // preserve other params already present
-        if (!params.get('dateFormat')) params.set('dateFormat', dateFormat);
-        return params;
-      });
+  // Ensure path has weekStart on first mutation when no subroute exists
+  const ensureWeekStartInPath = () => {
+    const first = getFirstPathSegment();
+    if (!first) {
+      const mondayIso = DateTime.now().set({ weekday: 1 }).toISODate()!;
+      replaceFirstPathSegment(mondayIso, true);
     }
   };
 
-  // Helper to update dateFormat and search param together
-  const setDateFormat = (value: string) => {
-    setDateFormatState(value);
-    setSearchParams((params) => {
-      params.set('dateFormat', value);
-      // only set weekStart if it already exists; first-time set happens on mutation handlers
-      const weekStart = params.get('weekStart');
-      if (weekStart) params.set('weekStart', normalizeToIsoMonday(weekStart));
-      return params;
-    });
-  };
-
-  // Setters to update state and URL for showWeekends
+  // Setters to update state and URL for showWeekends (search param)
   const setShowWeekendsAndUrl = (value: boolean) => {
     setShowWeekends(value);
-    ensureWeekStartInUrl();
-    updateUrlWithState({
-      weekStart: getWeekStartISO(),
-      showWeekends: value,
-      items: itemsRef.current,
-      newItems
-    });
-  };
-
-  // Heading level state from URL
-  const initialHeadingLevel = searchParams.get('headingLevel') || 'h3';
-  const [headingLevel, setHeadingLevel] = useState<string>(initialHeadingLevel);
-
-  // Helper to update headingLevel and search param together
-  const setHeadingLevelAndUrl = (value: string) => {
-    setHeadingLevel(value);
     setSearchParams((params) => {
-      params.set('headingLevel', value);
-      params.set('dateFormat', dateFormat);
-      const weekStart = params.get('weekStart');
-      if (weekStart) params.set('weekStart', normalizeToIsoMonday(weekStart));
+      if (value) params.set('weekends', '1');
+      else params.delete('weekends');
       return params;
     });
+    ensureWeekStartInPath();
   };
 
-  // Helper to get formatted day name for UI
-  const getFormattedDayName = (date: Date) => {
-    const luxonDate = DateTime.fromJSDate(date);
-    return luxonDate.toFormat(dateFormat);
-  };
-
-  // Generate days based on weekStart and showWeekends
+  // Generate days based on path-derived weekStart and showWeekends
   useEffect(() => {
     const weekStartISO = getWeekStartISO();
 
@@ -122,15 +141,12 @@ export const App = () => {
     for (let i = 0; i < 7; i++) {
       const jsDate = monday.plus({ days: i }).toJSDate();
       const isoDate = formatISODate(jsDate);
-      const dayName = getFormattedDayName(jsDate);
+      const luxonDate = DateTime.fromJSDate(jsDate);
+      const dayName = luxonDate.toFormat(dateFormat);
       const dayOfWeek = jsDate.getDay(); // 0 is Sunday, 6 is Saturday
 
-      // Skip weekends if showWeekends is false
-      if (!showWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
-        continue;
-      }
+      if (!showWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) continue;
 
-      // Use items from ref if they exist
       const items = itemsRef.current[isoDate] || [];
 
       days.push({
@@ -140,97 +156,64 @@ export const App = () => {
         isToday: isoDate === todayISODate
       });
 
-      // Initialize newItems state if not already set
       setNewItems((prev) => ({
         ...prev,
         [isoDate]: prev[isoDate] || ''
       }));
     }
 
-    // Reverse the order of days
     setWeekDays(days.reverse());
-  }, [searchParams, showWeekends, dateFormat]);
+  }, [location.pathname, showWeekends, dateFormat]);
 
-  // Set page title
+  // Set page title based on path weekStart
   useEffect(() => {
-    const weekStartParam = searchParams.get('weekStart');
-    if (!weekStartParam) {
+    const first = getFirstPathSegment();
+    if (!first) {
       document.title = 'Week Planner';
       return;
     }
-    const dt = DateTime.fromISO(normalizeToIsoMonday(weekStartParam));
+    const dt = DateTime.fromISO(first);
     if (!dt.isValid) {
       document.title = 'Week Planner';
       return;
     }
-    const weekNumber = dt.weekNumber;
-    const weekYear = dt.weekYear;
+    const monday = DateTime.fromISO(normalizeToIsoMonday(first));
+    const weekNumber = monday.weekNumber;
+    const weekYear = monday.weekYear;
     document.title = `Week ${weekNumber} ${weekYear}`;
-  }, [searchParams, showWeekends, dateFormat]);
+  }, [location.pathname, showWeekends, dateFormat]);
 
+  // Week navigation updates the first path segment
   const setWeekStartISO = (iso: string) => {
-    // Navigation is a mutation: always set weekStart param
     const normalized = normalizeToIsoMonday(iso);
-    setSearchParams((params) => {
-      params.set('weekStart', normalized);
-      if (!params.get('dateFormat')) params.set('dateFormat', dateFormat);
-      return params;
-    });
-    updateUrlWithState({
-      weekStart: normalized,
-      showWeekends,
-      items: itemsRef.current,
-      newItems
-    });
+    replaceFirstPathSegment(normalized, false);
+    // Base64 hash only stores items
+    updateUrlWithState({ items: itemsRef.current });
   };
 
   const handleAddItem = (dayDate: string) => {
-    if (newItems[dayDate].trim() === '') return;
+    if ((newItems[dayDate] || '').trim() === '') return;
     const newItem = { id: Date.now().toString(), text: newItems[dayDate] };
     const currentItems = itemsRef.current[dayDate] || [];
     itemsRef.current[dayDate] = [...currentItems, newItem];
     setWeekDays((prevDays) =>
-      prevDays.map((day) => {
-        if (day.date === dayDate) {
-          return {
-            ...day,
-            items: itemsRef.current[dayDate]
-          };
-        }
-        return day;
-      })
+      prevDays.map((day) =>
+        day.date === dayDate ? { ...day, items: itemsRef.current[dayDate] } : day
+      )
     );
-    setNewItems((prev) => ({
-      ...prev,
-      [dayDate]: ''
-    }));
-    ensureWeekStartInUrl();
-    updateUrlWithState({
-      weekStart: getWeekStartISO(),
-      showWeekends,
-      items: itemsRef.current,
-      newItems: { ...newItems, [dayDate]: '' }
-    });
+    setNewItems((prev) => ({ ...prev, [dayDate]: '' }));
+    ensureWeekStartInPath();
+    // Persist only items to base64 hash
+    updateUrlWithState({ items: itemsRef.current });
     setTimeout(() => {
       const inputs = document.querySelectorAll(`input[value=""]`);
-      if (inputs.length > 0) {
-        (inputs[0] as HTMLInputElement).focus();
-      }
+      if (inputs.length > 0) (inputs[0] as HTMLInputElement).focus();
     }, 0);
   };
 
   const handleInputChange = (dayDate: string, value: string) => {
-    setNewItems((prev) => {
-      const updated = { ...prev, [dayDate]: value };
-      ensureWeekStartInUrl();
-      updateUrlWithState({
-        weekStart: getWeekStartISO(),
-        showWeekends,
-        items: itemsRef.current,
-        newItems: updated
-      });
-      return updated;
-    });
+    setNewItems((prev) => ({ ...prev, [dayDate]: value }));
+    // Do not persist free-text inputs in base64 or search params
   };
 
   const handleReset = () => {
@@ -241,15 +224,12 @@ export const App = () => {
     setHeadingLevel('h3');
     setDateFormatState('yyyy-MM-dd');
 
-    // Clear search params (removes weekStart, dateFormat, headingLevel, etc.)
+    // Keep path as-is; clear search params and hash
     setSearchParams({});
-
-    // Clear URL hash state
     const url = new URL(window.location.href);
     url.hash = '';
     window.history.replaceState({}, '', url.toString());
 
-    // Reset title; effect will also enforce this
     document.title = 'Week Planner';
   };
 
