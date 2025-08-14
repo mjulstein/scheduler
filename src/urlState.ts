@@ -1,27 +1,49 @@
 // urlState.ts - Functions for managing state in the URL
 
+// Types representing items and URL state shapes
+export type UrlItem = { id: string; text: string };
+export type UrlItemTuple = [string, string];
+export type UrlItemInput = UrlItem | UrlItemTuple;
+export type UrlItemsMap = Record<string, UrlItemInput[]>;
+export type UrlItemsMapNormalized = Record<string, UrlItem[]>;
+export type UrlStateInput = UrlItemsMap | { items: UrlItemsMap };
+export type UrlStateCompact = Record<string, UrlItemTuple[]>;
+
+// Helpers
+const toStringSafe = (v: unknown): string => (v == null ? '' : String(v));
+
+const toTuple = (entry: unknown): UrlItemTuple => {
+  if (Array.isArray(entry)) {
+    return [toStringSafe(entry[0]), toStringSafe(entry[1])];
+  }
+  const e = entry as { id?: unknown; text?: unknown } | null | undefined;
+  return [toStringSafe(e?.id), toStringSafe(e?.text)];
+};
+
 /**
  * Encodes items mapping to base64 for URL storage in a compact form
  * Compact form: { [isoDate]: [[id, text], ...] }
  * Accepts either the items mapping directly, or an object with an `items` property.
  */
-export const encodeStateToBase64 = (state: any): string => {
+export const encodeStateToBase64 = (
+  state: UrlStateInput | UrlItemsMap | null | undefined
+): string => {
   // Accept both { items } wrapper or plain mapping
-  const items: Record<string, any[]> =
-    state && state.items ? state.items : state || {};
+  const source: unknown =
+    state && typeof state === 'object' && 'items' in state
+      ? (state as { items: unknown }).items
+      : state;
+
+  const itemsObj =
+    source && typeof source === 'object'
+      ? (source as Record<string, unknown>)
+      : {};
 
   // Convert to compact tuples
-  const compact: Record<string, [string, string][]> = {};
-  for (const [date, arr] of Object.entries(items)) {
-    const list = Array.isArray(arr) ? arr : [];
-    compact[date] = list.map((entry: any) => {
-      if (Array.isArray(entry)) {
-        // [id, text] already
-        return [String(entry[0] ?? ''), String(entry[1] ?? '')];
-      }
-      // { id, text }
-      return [String(entry?.id ?? ''), String(entry?.text ?? '')];
-    });
+  const compact: UrlStateCompact = {};
+  for (const [date, arr] of Object.entries(itemsObj)) {
+    const list = Array.isArray(arr) ? (arr as unknown[]) : [];
+    compact[date] = list.map(toTuple);
   }
 
   return btoa(JSON.stringify(compact));
@@ -36,27 +58,28 @@ export const encodeStateToBase64 = (state: any): string => {
  */
 export const decodeBase64ToState = (
   base64: string
-): Record<string, { id: string; text: string }[]> | null => {
+): UrlItemsMapNormalized | null => {
   try {
-    const parsed = JSON.parse(atob(base64));
+    const parsed: unknown = JSON.parse(atob(base64));
 
     // If legacy wrapper exists, unwrap it
-    const raw =
-      parsed && parsed.items && typeof parsed.items === 'object'
-        ? parsed.items
+    const raw: unknown =
+      parsed && typeof parsed === 'object' && 'items' in (parsed as object)
+        ? (parsed as { items: unknown }).items
         : parsed;
 
     if (!raw || typeof raw !== 'object') return {};
 
-    const normalized: Record<string, { id: string; text: string }[]> = {};
+    const normalized: UrlItemsMapNormalized = {};
 
-    for (const [date, arr] of Object.entries(raw)) {
-      const list = Array.isArray(arr) ? arr : [];
-      normalized[date] = list.map((entry: any) => {
+    for (const [date, arr] of Object.entries(raw as Record<string, unknown>)) {
+      const list = Array.isArray(arr) ? (arr as unknown[]) : [];
+      normalized[date] = list.map((entry: unknown): UrlItem => {
         if (Array.isArray(entry)) {
-          return { id: String(entry[0] ?? ''), text: String(entry[1] ?? '') };
+          return { id: toStringSafe(entry[0]), text: toStringSafe(entry[1]) };
         }
-        return { id: String(entry?.id ?? ''), text: String(entry?.text ?? '') };
+        const e = entry as { id?: unknown; text?: unknown } | null | undefined;
+        return { id: toStringSafe(e?.id), text: toStringSafe(e?.text) };
       });
     }
 
@@ -71,7 +94,9 @@ export const decodeBase64ToState = (
  * Updates the URL hash with encoded items (compact form)
  * Accepts either the items mapping directly, or an object with an `items` property.
  */
-export const updateUrlWithState = (state: any): void => {
+export const updateUrlWithState = (
+  state: UrlStateInput | UrlItemsMap | null | undefined
+): void => {
   const encodedState = encodeStateToBase64(state);
   const url = new URL(window.location.href);
   url.hash = encodedState;
@@ -82,10 +107,7 @@ export const updateUrlWithState = (state: any): void => {
  * Retrieves items mapping from URL hash (normalized object form)
  * @returns { [date]: [{ id, text }, ...] }
  */
-export const getStateFromUrl = (): Record<
-  string,
-  { id: string; text: string }[]
-> | null => {
+export const getStateFromUrl = (): UrlItemsMapNormalized | null => {
   const hash = window.location.hash.slice(1);
   if (!hash) return null;
 

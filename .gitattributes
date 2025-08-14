@@ -1,0 +1,15 @@
+# Normalize line endings: keep LF in repo, respect OS on checkout
+* text=auto
+
+# Ensure shell scripts use LF in working tree (avoids CRLF issues)
+*.sh text eol=lf
+
+# Treat common binaries appropriately
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+

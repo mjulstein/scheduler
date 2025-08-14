@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 // DayList.tsx - Container for rendering a list of DayCards
 import type { FC } from 'react';
 import type { DayData, DayItem } from './Types.ts';
