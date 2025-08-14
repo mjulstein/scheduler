@@ -1,4 +1,3 @@
-
 /**
  * Represents a single item in a day's todo list
  */

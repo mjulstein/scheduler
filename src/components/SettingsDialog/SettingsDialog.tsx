@@ -1,4 +1,3 @@
-// SettingsDialog.tsx - Modal dialog for app settings using native <dialog>
 import { type FC, useEffect, useRef } from 'react';
 import classes from './SettingsDialog.module.css';
 
