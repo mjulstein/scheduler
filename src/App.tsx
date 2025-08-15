@@ -1,11 +1,10 @@
 // App.tsx - Main application component
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import type { DayData, DayItem } from './components/DayList/Types';
+import type { DayData, DayItem } from './components/DayList';
 import { getStateFromUrl, updateUrlWithState } from './urlState';
 import { formatISODate, getMondayOfWeek } from './dateUtils';
 import { WeekNavigation } from './components/WeekNavigation';
-// Replace direct DayCard usage with DayList
 import { DayList } from './components/DayList';
 import { RichTextSection } from './components/RichTextSection';
 import {
@@ -62,8 +61,24 @@ export const App = () => {
     const rest = segs.slice(1);
     const finalSegs = newSeg ? [newSeg, ...rest] : rest;
     const newPath = '/' + finalSegs.join('/');
-    navigate(newPath + location.search + location.hash, { replace });
+
+    // Use the live URL to preserve the latest search and hash (avoids losing
+    // newly set search params or hash when navigate() runs in the same tick)
+    const currentUrl = new URL(window.location.href);
+    const target = newPath + currentUrl.search + currentUrl.hash;
+
+    navigate(target, { replace });
   };
+
+  // On initial mount, ensure path includes the current week's Monday
+  useEffect(() => {
+    const first = getFirstPathSegment();
+    if (!first) {
+      const mondayIso = DateTime.now().set({ weekday: 1 }).toISODate()!;
+      replaceFirstPathSegment(mondayIso, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helpers for dateFormat and headingLevel in search params
   const setDateFormat = (value: string) => {
@@ -255,17 +270,21 @@ export const App = () => {
           const currentMonday = DateTime.now().set({ weekday: 1 }).toISODate()!;
           const segs = location.pathname.split('/').filter(Boolean).slice(1);
           const newPath = '/' + [currentMonday, ...segs].join('/');
-          return (
-            <Navigate to={newPath + location.search + location.hash} replace />
-          );
+
+          const currentUrl = new URL(window.location.href);
+          const target = newPath + currentUrl.search + currentUrl.hash;
+
+          return <Navigate to={target} replace />;
         }
         const mondayIso = normalizeToIsoMonday(seg);
         if (mondayIso !== seg) {
           const segs = location.pathname.split('/').filter(Boolean).slice(1);
           const newPath = '/' + [mondayIso, ...segs].join('/');
-          return (
-            <Navigate to={newPath + location.search + location.hash} replace />
-          );
+
+          const currentUrl = new URL(window.location.href);
+          const target = newPath + currentUrl.search + currentUrl.hash;
+
+          return <Navigate to={target} replace />;
         }
         return null;
       })()}
@@ -302,6 +321,14 @@ export const App = () => {
             marginBottom: 8
           }}
         >
+          <button
+            type="button"
+            aria-label="Jump to this week"
+            title="This week"
+            onClick={() => replaceFirstPathSegment('this-week', false)}
+          >
+            This week
+          </button>
           <WeekNavigation
             weekStartISO={getWeekStartISO()}
             setWeekStartISO={setWeekStartISO}

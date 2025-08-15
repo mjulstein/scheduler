@@ -1,4 +1,5 @@
 // dateUtils.ts - Utility functions for date operations
+import { DateTime } from 'luxon';
 
 /**
  * Calculates the ISO week number for a given date
@@ -26,21 +27,21 @@ export const getMondayOfWeek = (date: Date, weekOffset: number = 0): Date => {
 };
 
 /**
- * Checks if a date is today
- * @param dateString - ISO date string to check
- * @returns True if the date is today, false otherwise
- */
-export const isToday = (dateString: string): boolean => {
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
-  return dateString === todayString;
-};
-
-/**
- * Formats a date as an ISO date string (YYYY-MM-DD)
+ * Formats a date as an ISO date string (YYYY-MM-DD) using the local timezone.
+ * Avoids UTC-based toISOString() which can shift the date by one day.
  * @param date - The date to format
  * @returns ISO date string
  */
 export const formatISODate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  return DateTime.fromJSDate(date).toISODate()!;
+};
+
+/**
+ * Checks if a date is today (in the local timezone)
+ * @param dateString - ISO date string to check
+ * @returns True if the date is today, false otherwise
+ */
+export const isToday = (dateString: string): boolean => {
+  const todayLocal = DateTime.now().toISODate();
+  return dateString === todayLocal;
 };
